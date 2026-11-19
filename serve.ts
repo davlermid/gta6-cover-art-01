@@ -65,5 +65,5 @@ createServer((request, response) => {
   });
   createReadStream(file).pipe(response);
 }).listen(port, '127.0.0.1', () => {
-  console.log(`Neon Shore Cover Studio on http://localhost:${port}`);
+  console.log(`app/ is on http://localhost:${port}`);
 });

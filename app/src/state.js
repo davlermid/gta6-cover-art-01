@@ -3,39 +3,35 @@
 
 export const state = {
   photos: [],
-  currentPhotoIndex: 0,
+  currentPhotoIndex: -1,
   panels: [],
   caption: '',
   subtitle: '',
-  layoutId: 'hero',
-  gradeId: 'vice-sunset',
-  fontFamily: 'ArchivoBlack',
-  fontSize: 72,
-  subtitleFontSize: 28,
-  exportWidth: 1080,
-  exportHeight: 1080,
-  // Per-panel transforms
-  panelTransforms: [],
+  layoutIndex: 0,
+  gradeIndex: 0,
+  fontIndex: 0,
+  exportSizes: [
+    { name: 'Square (1080x1080)', width: 1080, height: 1080 },
+    { name: 'Portrait (1080x1350)', width: 1080, height: 1350 },
+    { name: 'Landscape (1920x1080)', width: 1920, height: 1080 },
+  ],
+  fonts: [
+    { name: 'Archivo Black', family: 'ArchivoBlack', file: 'ArchivoBlack-Regular.ttf' },
+    { name: 'Anton', family: 'Anton', file: 'Anton-Regular.ttf' },
+    { name: 'Bebas Neue', family: 'BebasNeue', file: 'BebasNeue-Regular.ttf' },
+    { name: 'Pacifico', family: 'Pacifico', file: 'Pacifico-Regular.ttf' },
+  ],
 };
-
-export function initState() {
-  state.panelTransforms = [];
-}
 
 export function addPhoto(file, name) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const photo = {
-        id: crypto.randomUUID(),
-        name,
-        image: img,
-        width: img.width,
-        height: img.height,
-      };
+      const photo = { file, name, img, width: img.naturalWidth, height: img.naturalHeight };
       state.photos.push(photo);
-      if (state.photos.length === 1) {
+      if (state.currentPhotoIndex === -1) {
         state.currentPhotoIndex = 0;
+        initPanelsForPhoto(photo);
       }
       resolve(photo);
     };
@@ -44,82 +40,41 @@ export function addPhoto(file, name) {
   });
 }
 
-export function addSamplePhoto(name) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const photo = {
-        id: crypto.randomUUID(),
-        name,
-        image: img,
-        width: img.width,
-        height: img.height,
-      };
-      state.photos.push(photo);
-      if (state.photos.length === 1) {
-        state.currentPhotoIndex = 0;
-      }
-      resolve(photo);
-    };
-    img.onerror = reject;
-    img.src = `samples/${name}`;
-  });
-}
-
-export function removePhoto(index) {
-  URL.revokeObjectURL(state.photos[index].image.src);
-  state.photos.splice(index, 1);
-  if (state.currentPhotoIndex >= state.photos.length) {
-    state.currentPhotoIndex = Math.max(0, state.photos.length - 1);
-  }
-}
-
-export function setCurrentPhoto(index) {
-  if (index >= 0 && index < state.photos.length) {
-    state.currentPhotoIndex = index;
-  }
-}
-
-export function setPanels(panels) {
-  state.panels = panels;
-  // Initialize transforms for new panels
-  state.panelTransforms = panels.map(() => ({
-    scale: 1,
+export function initPanelsForPhoto(photo) {
+  const layout = layouts[state.layoutIndex];
+  state.panels = layout.panels.map((panel, i) => ({
+    ...panel,
+    photoIndex: 0,
+    zoom: 1,
     offsetX: 0,
     offsetY: 0,
+    dragging: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    dragStartOffsetX: 0,
+    dragStartOffsetY: 0,
   }));
 }
 
-export function getCurrentPhoto() {
-  return state.photos[state.currentPhotoIndex] || null;
-}
-
-export function getPanelTransform(panelIndex) {
-  return state.panelTransforms[panelIndex] || { scale: 1, offsetX: 0, offsetY: 0 };
-}
-
-export function setPanelTransform(panelIndex, transform) {
-  if (state.panelTransforms[panelIndex]) {
-    state.panelTransforms[panelIndex] = { ...state.panelTransforms[panelIndex], ...transform };
+export function selectPhoto(index) {
+  if (index >= 0 && index < state.photos.length) {
+    state.currentPhotoIndex = index;
+    initPanelsForPhoto(state.photos[index]);
   }
 }
 
-export function resetPanelTransform(panelIndex) {
-  if (state.panelTransforms[panelIndex]) {
-    state.panelTransforms[panelIndex] = { scale: 1, offsetX: 0, offsetY: 0 };
-  }
+export function setLayout(index) {
+  state.layoutIndex = index;
+  const photo = state.photos[state.currentPhotoIndex];
+  if (photo) initPanelsForPhoto(photo);
 }
 
-export function setLayout(id) {
-  state.layoutId = id;
+export function setGrade(index) {
+  state.gradeIndex = index;
 }
 
-export function setGrade(id) {
-  state.gradeId = id;
-}
-
-export function setFontFamily(family) {
-  state.fontFamily = family;
+export function setFont(index) {
+  state.fontIndex = index;
 }
 
 export function setCaption(text) {
@@ -130,18 +85,46 @@ export function setSubtitle(text) {
   state.subtitle = text;
 }
 
-export function setExportSize(width, height) {
-  state.exportWidth = width;
-  state.exportHeight = height;
+export function getCurrentPhoto() {
+  return state.photos[state.currentPhotoIndex];
 }
 
-export function getPhotoCount() {
-  return state.photos.length;
+export function getCurrentLayout() {
+  return layouts[state.layoutIndex];
 }
 
-export function clearPhotos() {
-  state.photos.forEach(p => URL.revokeObjectURL(p.image.src));
+export function getCurrentGrade() {
+  return grades[state.gradeIndex];
+}
+
+export function getCurrentFont() {
+  return state.fonts[state.fontIndex];
+}
+
+export function randomize() {
+  if (state.photos.length === 0) return;
+  state.currentPhotoIndex = Math.floor(Math.random() * state.photos.length);
+  state.layoutIndex = Math.floor(Math.random() * layouts.length);
+  state.gradeIndex = Math.floor(Math.random() * grades.length);
+  state.fontIndex = Math.floor(Math.random() * state.fonts.length);
+  const captions = ['NEON SHORE', 'MIDNIGHT RUN', 'VICE CITY', 'SUNSET HEIST', 'NEON DREAMS', 'CRIMSON TIDE'];
+  const subtitles = ['Grand Theft Auto VI Style', 'Cover Art Studio', 'Neon Nights', 'Vice Vibes', 'Midnight Drive', 'Ocean Drive'];
+  state.caption = captions[Math.floor(Math.random() * captions.length)];
+  state.subtitle = subtitles[Math.floor(Math.random() * subtitles.length)];
+  initPanelsForPhoto(state.photos[state.currentPhotoIndex]);
+}
+
+export function reset() {
   state.photos = [];
-  state.currentPhotoIndex = 0;
-  state.panelTransforms = [];
+  state.currentPhotoIndex = -1;
+  state.panels = [];
+  state.caption = '';
+  state.subtitle = '';
+  state.layoutIndex = 0;
+  state.gradeIndex = 0;
+  state.fontIndex = 0;
 }
+
+// Import layouts and grades (circular dependency avoided by importing here)
+import { layouts } from './layouts.js';
+import { grades } from './grades.js';

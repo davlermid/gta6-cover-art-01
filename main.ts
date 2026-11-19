@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, writeFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-app.ts';
@@ -13,6 +13,10 @@ if (existsSync(join(here, 'screenshots'))) {
   cpSync(join(here, 'screenshots'), join(out, 'screenshots'), { recursive: true });
 }
 
+// Log app file count for verification
+const appFiles = readdirSync(join(out, 'app'), { recursive: true });
+console.log(`Copied ${appFiles.length} app files to output`);
+
 writeFileSync(
   join(out, 'dossier.json'),
   buildDossier(out, {
@@ -21,8 +25,7 @@ writeFileSync(
     app_max_files: 993,
     app_max_bytes: 50331648,
     app_path_max_bytes: 1000,
-  }),
+  })
 );
 
-console.log('Built dossier at', join(out, 'dossier.json'));
-console.log('App copied to', join(out, 'app'));
+console.log(`Dossier written to ${out}/dossier.json`);

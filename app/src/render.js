@@ -1,25 +1,21 @@
 // Neon Shore Cover Studio - Canvas Renderer
-// Draws panels with crop/zoom/pan, applies grade, renders caption lettering, exports PNG
+// Draws panels with per-panel crop/zoom/pan, grade, caption lettering, exports PNG
 
-import { state, getCurrentPhoto, getPanelTransform, getPanelTransform as getTransform } from './state.js';
-import { getLayout } from './layouts.js';
-import { getGrade } from './grades.js';
+import { state, getCurrentPhoto, getCurrentLayout, getCurrentGrade, getCurrentFont } from './state.js';
+import { grades } from './grades.js';
 
-const fontCache = new Map();
+const loadedFonts = new Map();
 
-export async function loadFont(fontFamily) {
-  if (fontCache.has(fontFamily)) {
-    return fontCache.get(fontFamily);
-  }
-
-  const fontFace = new FontFace(fontFamily, `url(../fonts/${fontFamily}-Regular.ttf)`);
+export async function ensureFontLoaded(font) {
+  if (loadedFonts.has(font.family)) return;
+  const fontFace = new FontFace(font.family, `url(fonts/${font.file})`);
   await fontFace.load();
   document.fonts.add(fontFace);
-  fontCache.set(fontFamily, fontFace);
-  return fontFace;
+  loadedFonts.set(font.family, true);
 }
 
-export function drawPanel(ctx, panel, canvasWidth, canvasHeight, photo, transform) {
+function drawPanel(ctx, panel, photo, canvasWidth, canvasHeight) {
+  const { img, width: imgW, height: imgH } = photo;
   const panelW = panel.w * canvasWidth;
   const panelH = panel.h * canvasHeight;
   const panelX = panel.x * canvasWidth;
@@ -30,159 +26,115 @@ export function drawPanel(ctx, panel, canvasWidth, canvasHeight, photo, transfor
   ctx.rect(panelX, panelY, panelW, panelH);
   ctx.clip();
 
-  // Calculate source rectangle from photo with transform
-  const photoAspect = photo.width / photo.height;
-  const panelAspect = panelW / panelH;
+  const scale = Math.max(panelW / imgW, panelH / imgH) * panel.zoom;
+  const drawW = imgW * scale;
+  const drawH = imgH * scale;
+  const drawX = panelX + (panelW - drawW) / 2 + panel.offsetX;
+  const drawY = panelY + (panelH - drawH) / 2 + panel.offsetY;
 
-  let srcW, srcH, srcX, srcY;
-
-  if (photoAspect > panelAspect) {
-    // Photo is wider - fit height
-    srcH = photo.height / transform.scale;
-    srcW = srcH * panelAspect;
-    srcX = (photo.width - srcW) / 2 + transform.offsetX * photo.width;
-    srcY = (photo.height - srcH) / 2 + transform.offsetY * photo.height;
-  } else {
-    // Photo is taller - fit width
-    srcW = photo.width / transform.scale;
-    srcH = srcW / panelAspect;
-    srcX = (photo.width - srcW) / 2 + transform.offsetX * photo.width;
-    srcY = (photo.height - srcH) / 2 + transform.offsetY * photo.height;
-  }
-
-  // Clamp to photo bounds
-  srcX = Math.max(0, Math.min(photo.width - srcW, srcX));
-  srcY = Math.max(0, Math.min(photo.height - srcH, srcY));
-  srcW = Math.min(srcW, photo.width - srcX);
-  srcH = Math.min(srcH, photo.height - srcY);
-
-  ctx.drawImage(photo.image, srcX, srcY, srcW, srcH, panelX, panelY, panelW, panelH);
+  ctx.drawImage(img, drawX, drawY, drawW, drawH);
   ctx.restore();
 }
 
-export function applyGrade(ctx, canvasWidth, canvasHeight, gradeId) {
-  const grade = getGrade(gradeId);
-  const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
-  grade.apply(imageData.data, canvasWidth, canvasHeight);
-  ctx.putImageData(imageData, 0, 0);
+function drawVignette(ctx, width, height) {
+  const gradient = ctx.createRadialGradient(
+    width / 2, height / 2, Math.min(width, height) * 0.3,
+    width / 2, height / 2, Math.max(width, height) * 0.7
+  );
+  gradient.addColorStop(0, 'rgba(0,0,0,0)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0.4)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
 }
 
-export function drawCaption(ctx, canvasWidth, canvasHeight, caption, subtitle, fontFamily) {
+function drawCaption(ctx, canvasWidth, canvasHeight, font) {
+  const { caption, subtitle } = state;
   if (!caption && !subtitle) return;
 
-  ctx.save();
+  const fontSize = Math.min(canvasWidth, canvasHeight) * 0.08;
+  const subtitleSize = fontSize * 0.4;
+
+  ctx.font = `${fontSize}px "${font.family}"`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
   const centerX = canvasWidth / 2;
   const centerY = canvasHeight / 2;
 
-  // Main caption
+  // Draw main caption with thick black outline and white fill
   if (caption) {
-    const fontSize = Math.min(canvasWidth, canvasHeight) * 0.08;
-    ctx.font = `bold ${fontSize}px "${fontFamily}"`;
-
-    // Thick black outline
-    ctx.lineWidth = fontSize * 0.12;
+    ctx.lineWidth = fontSize * 0.15;
     ctx.strokeStyle = '#000000';
-    ctx.strokeText(caption, centerX, centerY - fontSize * 0.15);
-
-    // White fill
+    ctx.strokeText(caption, centerX, centerY - subtitleSize * 0.5);
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(caption, centerX, centerY - fontSize * 0.15);
-
-    // Neon glow effect - draw glow first, then text on top for cleaner look
-    ctx.shadowColor = '#00f3ff';
-    ctx.shadowBlur = fontSize * 0.15;
-    ctx.fillText(caption, centerX, centerY - fontSize * 0.15);
+    ctx.fillText(caption, centerX, centerY - subtitleSize * 0.5);
   }
 
-  // Subtitle
+  // Draw subtitle with neon glow
   if (subtitle) {
-    const subFontSize = Math.min(canvasWidth, canvasHeight) * 0.035;
-    const subY = centerY + (caption ? fontSize * 0.5 : 0);
-
-    ctx.font = `${subFontSize}px "${fontFamily}"`;
-    ctx.lineWidth = subFontSize * 0.08;
-    ctx.strokeStyle = '#000000';
-    ctx.strokeText(subtitle, centerX, subY);
-
+    ctx.font = `${subtitleSize}px "${font.family}"`;
+    const glowColor = '#ff00ff';
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = subtitleSize * 0.3;
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(subtitle, centerX, subY);
-
-    // Neon pink glow for subtitle
-    ctx.shadowColor = '#ff2a6d';
-    ctx.shadowBlur = subFontSize * 0.2;
-    ctx.fillText(subtitle, centerX, subY);
+    ctx.fillText(subtitle, centerX, centerY + fontSize * 0.6);
+    ctx.shadowBlur = 0;
   }
-
-  ctx.restore();
 }
 
-export async function renderPreview(canvas, width, height) {
+export async function renderToCanvas(canvas, width, height) {
+  const photo = getCurrentPhoto();
+  const layout = getCurrentLayout();
+  const grade = getCurrentGrade();
+  const font = getCurrentFont();
+
+  if (!photo || !layout) return;
+
+  await ensureFontLoaded(font);
+
   const ctx = canvas.getContext('2d');
   canvas.width = width;
   canvas.height = height;
 
-  const photo = getCurrentPhoto();
-  if (!photo) {
-    // Draw placeholder
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = '#444';
-    ctx.font = '24px system-ui';
-    ctx.textAlign = 'center';
-    ctx.fillText('Add a photo to begin', width / 2, height / 2);
-    return;
+  // Clear canvas
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, width, height);
+
+  // Draw all panels
+  for (const panel of state.panels) {
+    drawPanel(ctx, panel, photo, width, height);
   }
 
-  const layout = getLayout(state.layoutId);
-  const panels = layout.panels;
-
-  // Draw each panel
-  panels.forEach((panel, i) => {
-    const transform = getPanelTransform(i);
-    drawPanel(ctx, panel, width, height, photo, transform);
-  });
+  // Apply subtle vignette
+  drawVignette(ctx, width, height);
 
   // Apply color grade
-  applyGrade(ctx, width, height, state.gradeId);
+  if (grade && grade.apply) {
+    grade.apply(ctx, width, height);
+  }
 
-  // Draw caption
-  await loadFont(state.fontFamily);
-  drawCaption(ctx, width, height, state.caption, state.subtitle, state.fontFamily);
+  // Draw caption and subtitle
+  drawCaption(ctx, width, height, font);
 }
 
 export async function exportPNG(width, height) {
   const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-
-  const photo = getCurrentPhoto();
-  if (!photo) return null;
-
-  const layout = getLayout(state.layoutId);
-  const panels = layout.panels;
-
-  panels.forEach((panel, i) => {
-    const transform = getPanelTransform(i);
-    drawPanel(ctx, panel, width, height, photo, transform);
+  await renderToCanvas(canvas, width, height);
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `neon-shore-cover-${width}x${height}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      resolve();
+    }, 'image/png');
   });
-
-  applyGrade(ctx, width, height, state.gradeId);
-  await loadFont(state.fontFamily);
-  drawCaption(ctx, width, height, state.caption, state.subtitle, state.fontFamily);
-
-  return canvas.toDataURL('image/png');
 }
 
-export async function downloadPNG(width, height, filename) {
-  const dataUrl = await exportPNG(width, height);
-  if (!dataUrl) return;
-
-  const link = document.createElement('a');
-  link.href = dataUrl;
-  link.download = filename;
-  link.click();
+export async function previewCover(width, height) {
+  const canvas = document.createElement('canvas');
+  await renderToCanvas(canvas, width, height);
+  return canvas.toDataURL('image/png');
 }

@@ -1,167 +1,120 @@
-import { chromium } from 'playwright';
+// Neon Shore Cover Studio - Verification Script
+// Playwright test: starts server, loads app, switches layout/grade, exports cover, asserts zero console errors
+
 import { spawn } from 'node:child_process';
-import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { mkdirSync, existsSync } from 'node:fs';
 
-const SHOTS = [
-  { name: '1-cover.jpg', query: '?shot=cover&photo=boulevard.jpg&caption=Sunset%20Heist&layout=quad-grid&grade=vice-sunset&photos=boulevard.jpg,pier.jpg', w: 1080, h: 1080 },
-  { name: '2-editor.jpg', query: '?shot=editor&photo=boulevard.jpg&caption=Neon%20Shore&layout=quad-grid&grade=vice-sunset&photos=boulevard.jpg,pier.jpg', w: 1280, h: 720 },
-  { name: '3-cover.jpg', query: '?shot=cover&photo=pier.jpg&caption=Pier%20Pressure&layout=duo-split&grade=teal-dusk&photos=boulevard.jpg,pier.jpg', w: 1024, h: 1280 },
-  { name: '4-editor.jpg', query: '?shot=editor&photo=pier.jpg&caption=Boulevard%20Queen&layout=triptych&grade=neon-night&photos=boulevard.jpg,pier.jpg', w: 1280, h: 720 },
-];
+const here = fileURLToPath(new URL('.', import.meta.url));
 
-async function runServer() {
-  return new Promise((resolve, reject) => {
-    const proc = spawn('node', ['serve.ts', '--port', '8080'], {
-      cwd: process.cwd(),
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-
-    let output = '';
-    proc.stdout.on('data', (data) => {
-      output += data.toString();
-      if (output.includes('http://localhost:8080')) {
-        resolve(proc);
-      }
-    });
-    proc.stderr.on('data', (data) => {
-      console.error('Server stderr:', data.toString());
-    });
-    proc.on('error', reject);
-    proc.on('exit', (code) => {
-      if (code !== 0) reject(new Error(`Server exited with code ${code}`));
-    });
-
-    setTimeout(() => reject(new Error('Server start timeout')), 10000);
-  });
-}
-
-async function waitForApp(page) {
-  await page.waitForSelector('#preview', { timeout: 10000 });
-  await page.waitForFunction(() => {
-    const canvas = document.getElementById('preview');
-    return canvas && canvas.width > 0 && canvas.height > 0;
-  }, { timeout: 10000 });
-  // Wait for fonts and images to load
-  await page.waitForTimeout(2000);
-}
-
-async function takeScreenshot(page, shot, index) {
-  const url = `http://localhost:8080${shot.query}`;
-  console.log(`[${index + 1}/4] Loading ${url}`);
-
-  await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
-  await waitForApp(page);
-
-  // Check for console errors
-  const errors = [];
-  page.on('console', msg => {
-    if (msg.type() === 'error') {
-      errors.push(msg.text());
-    }
-  });
-  page.on('pageerror', err => {
-    errors.push(err.message);
-  });
-
-  // For cover shots, trigger export and capture the result
-  if (shot.query.includes('shot=cover')) {
-    // The cover shot should show the exported cover - we render at export size
-    await page.evaluate(async ({ w, h }) => {
-      const canvas = document.getElementById('preview');
-      canvas.width = w;
-      canvas.height = h;
-      // Trigger a re-render by dispatching a custom event
-      window.dispatchEvent(new CustomEvent('resize'));
-    }, { w: shot.w, h: shot.h });
-    await page.waitForTimeout(1000);
-  }
-
-  // Screenshot the canvas area
-  const canvas = await page.$('#preview');
-  if (!canvas) throw new Error('Canvas not found');
-
-  const screenshot = await canvas.screenshot({ type: 'jpeg', quality: 80 });
-
-  // Check size constraints
-  const maxBytes = 256 * 1024;
-  const maxLongSide = 1280;
-  const minShortSide = 480;
-
-  if (screenshot.length > maxBytes) {
-    console.warn(`  WARNING: ${shot.name} is ${screenshot.length} bytes (max ${maxBytes})`);
-  }
-
-  // Verify dimensions using sharp would be better, but let's check via page evaluation
-  const dims = await page.evaluate(() => {
-    const canvas = document.getElementById('preview');
-    return { width: canvas.width, height: canvas.height };
-  });
-
-  const longSide = Math.max(dims.width, dims.height);
-  const shortSide = Math.min(dims.width, dims.height);
-
-  if (longSide > maxLongSide) {
-    console.warn(`  WARNING: ${shot.name} long side ${longSide} > ${maxLongSide}`);
-  }
-  if (shortSide < minShortSide) {
-    console.warn(`  WARNING: ${shot.name} short side ${shortSide} < ${minShortSide}`);
-  }
-
-  // Save screenshot
-  const screenshotsDir = join(process.cwd(), 'screenshots');
-  if (!existsSync(screenshotsDir)) mkdirSync(screenshotsDir, { recursive: true });
-  writeFileSync(join(screenshotsDir, shot.name), screenshot);
-  console.log(`  Saved ${shot.name} (${screenshot.length} bytes, ${dims.width}x${dims.height})`);
-
-  if (errors.length > 0) {
-    console.error('  CONSOLE ERRORS:', errors);
-    throw new Error(`Console errors detected: ${errors.join('; ')}`);
-  }
-
-  console.log(`  OK - no console errors`);
-}
-
-async function main() {
-  console.log('Starting server...');
-  const server = await runServer();
-  console.log('Server started');
-
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-
-  // Capture console errors
-  const allErrors = [];
-  page.on('console', msg => {
-    if (msg.type() === 'error') {
-      allErrors.push(msg.text());
-    }
-  });
-  page.on('pageerror', err => {
-    allErrors.push(err.message);
-  });
-
-  try {
-    for (let i = 0; i < SHOTS.length; i++) {
-      await takeScreenshot(page, SHOTS[i], i);
-    }
-    console.log('\nAll screenshots captured successfully!');
-  } finally {
-    await browser.close();
-    server.kill();
-    console.log('Server stopped');
-  }
-
-  if (allErrors.length > 0) {
-    console.error('\nCONSOLE ERRORS FOUND:');
-    allErrors.forEach(e => console.error('  ', e));
-    process.exit(1);
-  }
-
-  console.log('\nVerification passed - zero console errors');
-}
-
-main().catch(err => {
-  console.error('FAILED:', err);
-  process.exit(1);
+// Start the static server
+const server = spawn('node', ['serve.ts'], {
+  cwd: here,
+  stdio: ['ignore', 'pipe', 'pipe'],
 });
+
+let serverReady = false;
+server.stdout.on('data', (data) => {
+  console.log('[server]', data.toString().trim());
+  if (data.toString().includes('app/ is on')) serverReady = true;
+});
+server.stderr.on('data', (data) => console.error('[server err]', data.toString().trim()));
+
+await new Promise((resolve) => setTimeout(resolve, 1000));
+
+// Import Playwright
+const { chromium } = await import('playwright-core');
+const browser = await chromium.launch({ headless: true });
+const context = await browser.newContext();
+const page = await context.newPage();
+
+const consoleErrors = [];
+page.on('console', (msg) => {
+  if (msg.type() === 'error') {
+    consoleErrors.push(msg.text());
+    console.error('[browser console error]', msg.text());
+  }
+});
+
+page.on('pageerror', (err) => {
+  consoleErrors.push(err.message);
+  console.error('[browser page error]', err.message);
+});
+
+const screenshotsDir = resolve(here, 'screenshots');
+mkdirSync(screenshotsDir, { recursive: true });
+
+async function screenshot(name, options = {}) {
+  const path = resolve(screenshotsDir, name);
+  await page.screenshot({ path, type: 'jpeg', quality: 80, ...options });
+  console.log(`Saved ${name}`);
+}
+
+try {
+  // 1. Load editor with sample photo
+  console.log('Loading editor with pier.jpg...');
+  await page.goto('http://localhost:8080/?shot=editor&photo=pier&caption=Neon%20Shore&layout=0&grade=0', {
+    waitUntil: 'networkidle',
+    timeout: 30000,
+  });
+  await page.waitForSelector('#main-canvas', { timeout: 10000 });
+  await page.waitForTimeout(1000);
+  await screenshot('2-editor.jpg', { clip: { x: 0, y: 0, width: 1280, height: 720 } });
+
+  // 2. Export a cover (portrait)
+  console.log('Exporting cover (portrait)...');
+  await page.goto('http://localhost:8080/?shot=cover&photo=pier&caption=Neon%20Shore&layout=0&grade=0', {
+    waitUntil: 'networkidle',
+    timeout: 30000,
+  });
+  await page.waitForSelector('#main-canvas', { timeout: 10000 });
+  await page.waitForTimeout(1000);
+  await screenshot('1-cover.jpg', { clip: { x: 0, y: 0, width: 1024, height: 1280 } });
+
+  // 3. Switch layout and grade, export another cover (landscape)
+  console.log('Switching layout/grade, exporting landscape cover...');
+  await page.goto('http://localhost:8080/?shot=cover&photo=boulevard&caption=Midnight%20Run&layout=3&grade=2', {
+    waitUntil: 'networkidle',
+    timeout: 30000,
+  });
+  await page.waitForSelector('#main-canvas', { timeout: 10000 });
+  await page.waitForTimeout(1000);
+  await screenshot('3-cover.jpg', { clip: { x: 0, y: 0, width: 1280, height: 720 } });
+
+  // 4. Editor with different layout/grade
+  console.log('Loading editor with different layout/grade...');
+  await page.goto('http://localhost:8080/?shot=editor&photo=pier&caption=Pier%20Pressure&layout=5&grade=4', {
+    waitUntil: 'networkidle',
+    timeout: 30000,
+  });
+  await page.waitForSelector('#main-canvas', { timeout: 10000 });
+  await page.waitForTimeout(1000);
+  await screenshot('4-editor.jpg', { clip: { x: 0, y: 0, width: 1280, height: 720 } });
+
+  // Verify screenshots exist and are under size limits
+  const fs = await import('node:fs');
+  for (const name of ['1-cover.jpg', '2-editor.jpg', '3-cover.jpg', '4-editor.jpg']) {
+    const path = resolve(screenshotsDir, name);
+    if (!existsSync(path)) throw new Error(`Missing screenshot: ${name}`);
+    const stats = fs.statSync(path);
+    if (stats.size > 262144) throw new Error(`${name} exceeds 256 KiB (${stats.size} bytes)`);
+    console.log(`${name}: ${stats.size} bytes OK`);
+  }
+
+  if (consoleErrors.length > 0) {
+    throw new Error(`Console errors detected: ${consoleErrors.join('; ')}`);
+  }
+
+  console.log('\n✅ All checks passed!');
+  console.log('- 4 screenshots saved');
+  console.log('- Zero console errors');
+  console.log('- All screenshots under 256 KiB');
+
+} catch (err) {
+  console.error('\n❌ Verification failed:', err.message);
+  process.exitCode = 1;
+} finally {
+  await browser.close();
+  server.kill();
+}
