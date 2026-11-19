@@ -6,6 +6,7 @@
 <title>Neon Shore Cover Studio</title>
 <link rel="stylesheet" href="./style.css">
 <style>
+@font-face { font-family: 'Archivo Black'; src: url('./fonts/ArchivoBlack-Regular.ttf') format('truetype'); font-weight: normal; font-style: normal; }
 @font-face { font-family: 'Anton'; src: url('./fonts/Anton-Regular.ttf') format('truetype'); font-weight: normal; font-style: normal; }
 @font-face { font-family: 'Pacifico'; src: url('./fonts/Pacifico-Regular.ttf') format('truetype'); font-weight: normal; font-style: normal; }
 @font-face { font-family: 'Bebas Neue'; src: url('./fonts/BebasNeue-Regular.ttf') format('truetype'); font-weight: normal; font-style: normal; }
@@ -48,7 +49,9 @@
       <h2>Lettering</h2>
       <label class="row"><span>Title</span><input id="title" type="text" maxlength="26" value="NEON SHORE"></label>
       <label class="row"><span>Subtitle</span><input id="subtitle" type="text" maxlength="40" value="a vice city story"></label>
-      <label class="row"><span>Title style</span><select id="titleStyle"><option value="sunset">Sunset gradient</option><option value="white">Solid white</option></select></label>
+      <label class="row"><span>Title style</span><select id="titleStyle"><option value="gta">GTA poster</option><option value="sunset">Sunset gradient</option><option value="white">Solid white</option></select></label>
+      <label class="row"><span>Title font</span><select id="titleFont"><option value="Archivo Black">Archivo Black</option><option value="Anton">Anton</option><option value="Bebas Neue">Bebas Neue</option><option value="Pacifico">Pacifico</option></select></label>
+      <label class="row"><span>Outline width</span><input id="titleStroke" type="range" min="6" max="20" step="1" value="14"><b id="titleStrokeVal">14%</b></label>
       <label class="row"><span>Title size</span><input id="titleSize" type="range" min="30" max="110" value="62"><b id="titleSizeVal">62</b></label>
       <label class="row"><span>Title position</span><input id="titleY" type="range" min="40" max="80" value="66"><b id="titleYVal">66</b></label>
       <label class="row"><span>Badge text</span><input id="badgeText" type="text" maxlength="24" value="City of Dreams"></label>

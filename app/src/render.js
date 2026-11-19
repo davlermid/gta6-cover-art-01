@@ -7,8 +7,16 @@ import { LAYOUTS } from './layouts.js';
 let fontsReady = document.fonts ? document.fonts.ready.then(() => true).catch(() => true) : Promise.resolve(true);
 export function whenFontsReady() { return fontsReady; }
 
+/** Explicitly loads every @font-face family (fonts.ready alone resolves before they are fetched). */
+export function loadTitleFonts() {
+  if (!document.fonts) return Promise.resolve();
+  const faces = ['10px "Archivo Black"', '10px Anton', '10px "Bebas Neue"', '10px Pacifico'];
+  return Promise.all(faces.map((f) => document.fonts.load(f).catch(() => null)));
+}
+
 /** Kicks font loading (some browsers only fetch @font-face fonts once used). */
 export function primeFonts(ctx) {
+  ctx.font = '10px "Archivo Black"';
   ctx.font = '10px Anton';
   ctx.font = '10px Pacifico';
   ctx.font = '10px "Bebas Neue"';
@@ -187,10 +195,12 @@ function drawTitleBlock(ctx, W, H, state) {
   }
 
   // Main title, centered in the block, with shadow or sunset fill
-  const titleText = (t.title || '').trim();
+  // GTA-poster style: heavy uppercase condensed lettering
+  const titleText = (t.title || '').trim().toUpperCase();
   if (titleText) {
     const maxW = bw - pad * 2;
-    const size = fitText(ctx, titleText, maxW, (t.titleSize / 100) * H * 0.6, 'Anton', '');
+  const family = t.titleFont || 'Archivo Black';
+  const size = fitText(ctx, titleText, maxW, (t.titleSize / 100) * H * 0.6, `'${family}'`, '');
     const cx = bx + bw / 2;
     const cy = blockTop + bh * 0.56;
     ctx.textAlign = 'center';
@@ -203,8 +213,17 @@ function drawTitleBlock(ctx, W, H, state) {
       g.addColorStop(1, '#ff2e88');
       ctx.fillStyle = g;
     } else {
+      // Default 'gta' style: solid white fill over a thick black outline
       ctx.fillStyle = '#ffffff';
     }
+    // Thick black outline around the letters (GTA-poster style), then fill on top.
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.miterLimit = 2;
+    ctx.strokeStyle = '#0a0714';
+    ctx.lineWidth = Math.max(2, size * (t.titleStroke ?? 0.14)); // ~12-16% of font size
+    ctx.strokeText(titleText, cx, cy);
+    // Subtle drop shadow behind everything
     ctx.shadowColor = 'rgba(0,0,0,0.55)';
     ctx.shadowBlur = size * 0.12;
     ctx.shadowOffsetY = size * 0.04;
@@ -218,14 +237,14 @@ function drawTitleBlock(ctx, W, H, state) {
       const ssize = size * 0.26;
       ctx.font = `${ssize}px Pacifico`;
       const sy = Math.min(cy + ssize * 0.95, blockTop + bh - H * 0.012);
-      if (t.neonGlow) {
+      if (t.neonGlow !== false) { // default: neon-glow subtitle
         ctx.shadowColor = 'rgba(64,230,255,0.9)';
         ctx.shadowBlur = ssize * 0.55;
       } else {
         ctx.shadowColor = 'rgba(0,0,0,0.6)';
         ctx.shadowBlur = ssize * 0.3;
       }
-      ctx.fillStyle = t.neonGlow ? '#eafcff' : '#ffd9ec';
+      ctx.fillStyle = t.neonGlow !== false ? '#eafcff' : '#ffd9ec';
       ctx.fillText(sub, cx, sy);
       ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;

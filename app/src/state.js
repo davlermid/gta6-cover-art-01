@@ -15,7 +15,9 @@ export function defaultState() {
     grade: 'vice-sunset',
     title: 'NEON SHORE',
     subtitle: 'a vice city story',
-    titleStyle: 'sunset', // 'sunset' | 'white'
+    titleStyle: 'gta', // 'gta' (white fill + thick black outline) | 'sunset' | 'white'
+    titleFont: 'Archivo Black', // 'Archivo Black' | 'Anton' | 'Bebas Neue' | 'Pacifico'
+    titleStroke: 0.14, // outline width as a fraction of font size
     titleSize: 62,
     titleY: 66, // percent from top for the title block
     badge: true,

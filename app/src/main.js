@@ -1,5 +1,5 @@
 // Neon Shore Cover Studio — wires the editor UI, panel interaction, undo/redo, export and shot scenes.
-import { renderCover, exportPNG, whenFontsReady } from './render.js';
+import { renderCover, exportPNG, whenFontsReady, loadTitleFonts } from './render.js';
 import { GRADES, GRADE_IDS } from './grades.js';
 import { LAYOUTS, LAYOUT_IDS } from './layouts.js';
 import {
@@ -227,9 +227,11 @@ bindInput('title', 'title');
 bindInput('subtitle', 'subtitle');
 bindInput('badgeText', 'badgeText');
 bindInput('titleSize', 'titleSize', Number, () => { $('titleSizeVal').textContent = state().titleSize; });
+bindInput('titleStroke', 'titleStroke', (v) => Number(v) / 100, () => { $('titleStrokeVal').textContent = `${state().titleStroke * 100}%`; });
 bindInput('titleY', 'titleY', Number, () => { $('titleYVal').textContent = state().titleY; });
 bindInput('gap', 'gap', Number, () => { $('gapVal').textContent = state().gap; });
 $('titleStyle').addEventListener('change', (e) => commit({ ...state(), titleStyle: e.target.value }));
+$('titleFont').addEventListener('change', (e) => commit({ ...state(), titleFont: e.target.value }));
 $('border').addEventListener('change', (e) => commit({ ...state(), border: e.target.value }));
 $('badge').addEventListener('change', (e) => commit({ ...state(), badge: e.target.checked }));
 $('halftone').addEventListener('change', (e) => commit({ ...state(), halftone: e.target.checked }));
@@ -269,7 +271,7 @@ function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 $('randomize').addEventListener('click', () => {
   const layoutId = pick(LAYOUT_IDS.filter((l) => l !== 'full-bleed'));
   const n = LAYOUTS[layoutId].panels;
-  let s = { ...defaultState(), layout: layoutId, grade: pick(GRADE_IDS), titleStyle: pick(['sunset', 'white']) };
+  let s = { ...defaultState(), layout: layoutId, grade: pick(GRADE_IDS), titleStyle: pick(['gta', 'gta', 'sunset', 'white']) };
   const names = pick(TITLES);
   s.title = names[0];
   s.subtitle = names[1];
@@ -310,6 +312,8 @@ function syncUI() {
   renderStars();
   const map = {
     title: s.title, subtitle: s.subtitle, badgeText: s.badgeText, titleStyle: s.titleStyle,
+    titleFont: s.titleFont || 'Archivo Black',
+    titleStroke: Math.round((s.titleStroke ?? 0.14) * 100),
     titleSize: s.titleSize, titleY: s.titleY, gap: s.gap, border: s.border, badge: s.badge,
     halftone: s.halftone, grain: s.grain, vignette: s.vignette,
   };
@@ -319,6 +323,7 @@ function syncUI() {
     else el.value = v;
   }
   $('titleSizeVal').textContent = s.titleSize;
+  $('titleStrokeVal').textContent = `${Math.round((s.titleStroke ?? 0.14) * 100)}%`;
   $('titleYVal').textContent = s.titleY;
   $('gapVal').textContent = s.gap;
   $('undo').disabled = !history.canUndo();
@@ -362,6 +367,7 @@ const shot = params.get('shot');
 if (shot) document.body.classList.add(shot === 'cover' ? 'shot-cover' : 'shot-editor');
 
 whenFontsReady().then(async () => {
+  await loadTitleFonts(); // make sure the display faces are really loaded before the first paint
   if (shot) {
     await applyShotScene(params);
     await runShot(shot, params);
