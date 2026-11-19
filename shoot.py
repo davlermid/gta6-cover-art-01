@@ -27,13 +27,18 @@ def make_page(browser, w, h):
 with sync_playwright() as p:
     browser = p.chromium.launch(executable_path=exe, args=["--no-sandbox", "--force-color-profile=srgb"])
     for s in shots:
-        page = make_page(browser, s["w"], s["h"])
+        w, h = s["w"], s["h"]
+        m = max(w, h)
+        if m > 1280:  # screenshot cap: long side ≤ 1280 — scale the viewport, the cover fills it either way
+            k = 1280 / m
+            w, h = round(w * k), round(h * k)
+        page = make_page(browser, w, h)
         page.goto("http://localhost:8080/" + s["query"], wait_until="networkidle")
         page.wait_for_function("window.__shotReady === true", timeout=15000)
         page.wait_for_timeout(300)
         page.screenshot(path=os.path.join(ROOT, "screenshots", s["name"]), type="jpeg", quality=82)
         page.close()
-        print("shot", s["name"], os.path.getsize(os.path.join(ROOT, "screenshots", s["name"])), "bytes")
+        print("shot", s["name"], os.path.getsize(os.path.join(ROOT, "screenshots", s["name"])), "bytes", f"{w}x{h}")
 
     # smoke test the editor
     page = make_page(browser, 1280, 800)
