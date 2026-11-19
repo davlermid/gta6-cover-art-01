@@ -1,5 +1,6 @@
 [
-  { "name": "1-cover.jpg", "query": "?shot=cover&photo=pier&caption=Sunset%20Heist", "w": 1080, "h": 1080 },
-  { "name": "2-editor.jpg", "query": "?shot=editor&photo=boulevard&caption=Boulevard%20Queen", "w": 1280, "h": 720 },
-  { "name": "3-cover.jpg", "query": "?shot=cover&photo=boulevard&caption=Boulevard%20Queen", "w": 1080, "h": 1080 }
+  { "name": "1-cover.jpg", "query": "?shot=cover&photo=woman-car&caption=Sunset%20Heist&layout=grid9&grade=vice-sunset&photos=woman-car,man-pier,friends-neon,man-rooftop,woman-car,pier", "w": 1080, "h": 1080 },
+  { "name": "2-editor.jpg", "query": "?shot=editor&photo=woman-car&caption=Neon%20Shore&layout=grid9&grade=vice-sunset&photos=woman-car,man-rooftop,friends-neon,man-pier,boulevard,woman-car", "w": 1280, "h": 720 },
+  { "name": "3-cover.jpg", "query": "?shot=cover&photo=woman-car&caption=Pier%20Pressure&layout=hero-three&grade=teal-pink&photos=man-pier,woman-car,friends-neon,man-rooftop,boulevard,pier", "w": 1080, "h": 1350 },
+  { "name": "4-editor.jpg", "query": "?shot=editor&photo=man-pier&caption=Boulevard%20Queen&layout=snapshot&grade=neon-night&photos=man-rooftop,friends-neon,man-pier,woman-car,boulevard,pier", "w": 1280, "h": 720 }
 ]

@@ -3,20 +3,90 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cover Snap</title>
+<title>Neon Shore Cover Studio</title>
 <link rel="stylesheet" href="./style.css">
+<style>
+@font-face { font-family: 'Anton'; src: url('./fonts/Anton-Regular.ttf') format('truetype'); font-weight: normal; font-style: normal; }
+@font-face { font-family: 'Pacifico'; src: url('./fonts/Pacifico-Regular.ttf') format('truetype'); font-weight: normal; font-style: normal; }
+@font-face { font-family: 'Bebas Neue'; src: url('./fonts/BebasNeue-Regular.ttf') format('truetype'); font-weight: normal; font-style: normal; }
+</style>
 </head>
 <body>
-<main class="app">
-  <section class="controls">
-    <h1>Cover Snap</h1>
-    <p>A photo and a caption, made into a square cover.</p>
-    <label>Photo <input id="photo" type="file" accept="image/*"></label>
-    <label>Caption <input id="caption" type="text" maxlength="40" value="Sunset Heist"></label>
-    <button id="export" type="button">Export PNG 1080 x 1080</button>
-    <p id="status" role="status"></p>
+<main class="studio" id="studio">
+  <aside class="side" id="side">
+    <header class="brand">
+      <div class="logo">NS</div>
+      <div>
+        <h1>Neon Shore</h1>
+        <p class="tag">Cover Studio</p>
+      </div>
+    </header>
+
+    <section class="group">
+      <h2>Photos</h2>
+      <div id="dropzone" class="dropzone">
+        <input id="photo" type="file" accept="image/*" multiple hidden>
+        <p><strong>Add photos</strong><span>drop files here or click to browse</span></p>
+      </div>
+      <div id="thumbs" class="thumbs"></div>
+    </section>
+
+    <section class="group">
+      <h2>Layout</h2>
+      <div id="layouts" class="chiprow"></div>
+      <label class="row"><span>Panel gap</span><input id="gap" type="range" min="0" max="6" step="0.2" value="1.4"><b id="gapVal">1.4</b></label>
+      <label class="row"><span>Panel border</span><select id="border"><option value="white">White frame</option><option value="ink">Inked edges</option><option value="none">None</option></select></label>
+    </section>
+
+    <section class="group">
+      <h2>Color grade</h2>
+      <div id="grades" class="chiprow"></div>
+      <label class="check"><input id="panelGradeToggle" type="checkbox"> This panel only: <select id="panelGrade" disabled><option value="">(cover grade)</option></select></label>
+    </section>
+
+    <section class="group">
+      <h2>Lettering</h2>
+      <label class="row"><span>Title</span><input id="title" type="text" maxlength="26" value="NEON SHORE"></label>
+      <label class="row"><span>Subtitle</span><input id="subtitle" type="text" maxlength="40" value="a vice city story"></label>
+      <label class="row"><span>Title style</span><select id="titleStyle"><option value="sunset">Sunset gradient</option><option value="white">Solid white</option></select></label>
+      <label class="row"><span>Title size</span><input id="titleSize" type="range" min="30" max="110" value="62"><b id="titleSizeVal">62</b></label>
+      <label class="row"><span>Title position</span><input id="titleY" type="range" min="40" max="80" value="66"><b id="titleYVal">66</b></label>
+      <label class="row"><span>Badge text</span><input id="badgeText" type="text" maxlength="24" value="City of Dreams"></label>
+      <label class="check"><input id="badge" type="checkbox" checked> Show badge ribbon</label>
+    </section>
+
+    <section class="group">
+      <h2>Heat &amp; effects</h2>
+      <div class="row"><span>Heat meter</span><div id="stars" class="stars"></div></div>
+      <label class="check"><input id="halftone" type="checkbox" checked> Halftone title block</label>
+      <label class="check"><input id="grain" type="checkbox" checked> Film grain</label>
+      <label class="check"><input id="vignette" type="checkbox" checked> Vignette</label>
+    </section>
+
+    <section class="group actions">
+      <h2>Export PNG</h2>
+      <div class="exports">
+        <button data-w="1080" data-h="1080">1080×1080</button>
+        <button data-w="1080" data-h="1350">1080×1350</button>
+        <button data-w="1920" data-h="1080">1920×1080</button>
+        <button data-w="1080" data-h="1920">Story 1080×1920</button>
+      </div>
+      <p id="status" role="status"></p>
+    </section>
+  </aside>
+
+  <section class="stage" id="stage">
+    <div class="toolbar">
+      <div class="tbgroup">
+        <button id="undo" title="Undo (Ctrl+Z)">↶</button>
+        <button id="redo" title="Redo (Ctrl+Shift+Z)">↷</button>
+        <button id="randomize" title="Randomize">🎲</button>
+        <button id="reset" title="Reset">⟲</button>
+      </div>
+      <p id="hint">Click a panel to select · drag to move · wheel to zoom</p>
+    </div>
+    <canvas id="cover" width="1080" height="1080"></canvas>
   </section>
-  <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
 </main>
 <script type="module" src="./src/main.js"></script>
 </body>
