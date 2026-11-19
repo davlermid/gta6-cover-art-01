@@ -1,66 +1,74 @@
-// Layouts: each returns a list of panels (normalized rects within the cover) plus where the title block sits.
-// Rects are fractions {x, y, w, h} of the cover; a panel of null w/h means the title block owns the space.
+// Neon Shore Cover Studio - Layout Definitions
+// 6 multi-panel layouts as normalized rectangles (0-1 coordinates)
 
-export const LAYOUTS = {
-  grid9: {
-    name: '9-Panel Grid',
-    panels: 9,
-    rects: (n) => grid(3, 3, n),
-    title: { x: 0.04, y: 0.66, w: 0.92, h: 0.3 },
+export const layouts = [
+  {
+    id: 'hero',
+    name: 'Single Hero',
+    panels: [
+      { x: 0, y: 0, w: 1, h: 1 },
+    ],
   },
-  grid4: {
-    name: '4-Panel Grid',
-    panels: 4,
-    rects: (n) => grid(2, 2, n),
-    title: { x: 0.04, y: 0.68, w: 0.92, h: 0.28 },
+  {
+    id: 'duo-split',
+    name: 'Duo Split',
+    panels: [
+      { x: 0, y: 0, w: 0.5, h: 1 },
+      { x: 0.5, y: 0, w: 0.5, h: 1 },
+    ],
   },
-  'hero-three': {
-    name: 'Hero & Three',
-    panels: 4,
-    rects: (n) => [
-      { x: 0.03, y: 0.03, w: 0.62, h: 0.6 },
-      { x: 0.67, y: 0.03, w: 0.3, h: 0.19 },
-      { x: 0.67, y: 0.235, w: 0.3, h: 0.19 },
-      { x: 0.67, y: 0.44, w: 0.3, h: 0.19 },
-    ][n],
-    title: { x: 0.04, y: 0.67, w: 0.92, h: 0.29 },
+  {
+    id: 'triptych',
+    name: 'Triptych',
+    panels: [
+      { x: 0, y: 0, w: 1/3, h: 1 },
+      { x: 1/3, y: 0, w: 1/3, h: 1 },
+      { x: 2/3, y: 0, w: 1/3, h: 1 },
+    ],
   },
-  'full-bleed': {
-    name: 'Full Bleed',
-    panels: 1,
-    rects: () => [{ x: 0, y: 0, w: 1, h: 1 }],
-    title: { x: 0.05, y: 0.6, w: 0.9, h: 0.36 },
+  {
+    id: 'quad-grid',
+    name: 'Quad Grid',
+    panels: [
+      { x: 0, y: 0, w: 0.5, h: 0.5 },
+      { x: 0.5, y: 0, w: 0.5, h: 0.5 },
+      { x: 0, y: 0.5, w: 0.5, h: 0.5 },
+      { x: 0.5, y: 0.5, w: 0.5, h: 0.5 },
+    ],
   },
-  'snapshot': {
-    name: 'Tilted Snapshots',
-    panels: 4,
-    rects: (n) => {
-      const base = [
-        { x: 0.04, y: 0.05, w: 0.46, h: 0.42, tilt: -5 },
-        { x: 0.5, y: 0.09, w: 0.46, h: 0.4, tilt: 4 },
-        { x: 0.07, y: 0.34, w: 0.44, h: 0.4, tilt: 3 },
-        { x: 0.52, y: 0.4, w: 0.44, h: 0.4, tilt: -4 },
-      ][n];
-      return { ...base, tilt: base.tilt };
-    },
-    title: { x: 0.04, y: 0.72, w: 0.92, h: 0.25 },
+  {
+    id: 'diagonal-slash',
+    name: 'Diagonal Slash',
+    panels: [
+      { x: 0, y: 0, w: 0.7, h: 1 },
+      { x: 0.3, y: 0, w: 0.7, h: 1 },
+    ],
   },
-  'split-duo': {
-    name: 'Split Duo',
-    panels: 2,
-    rects: (n) => [{ x: 0, y: 0, w: 0.5, h: 1 }, { x: 0.5, y: 0, w: 0.5, h: 1 }][n],
-    title: { x: 0.05, y: 0.62, w: 0.9, h: 0.34, band: true },
+  {
+    id: 'filmstrip',
+    name: 'Filmstrip',
+    panels: [
+      { x: 0, y: 0, w: 1, h: 0.25 },
+      { x: 0, y: 0.25, w: 1, h: 0.25 },
+      { x: 0, y: 0.5, w: 1, h: 0.25 },
+      { x: 0, y: 0.75, w: 1, h: 0.25 },
+    ],
   },
-};
+];
 
-export const LAYOUT_IDS = Object.keys(LAYOUTS);
+export function getLayout(id) {
+  return layouts.find(l => l.id === id) || layouts[0];
+}
 
-/** An n x m grid of panel rects (column-major so panels fill down then across). */
-function grid(cols, rows, n) {
-  const gap = 0.012;
-  const cw = (1 - gap * (cols - 1)) / cols;
-  const ch = (1 - gap * (rows - 1)) / rows;
-  const col = n % cols;
-  const row = Math.floor(n / cols);
-  return { x: col * (cw + gap), y: row * (ch + gap), w: cw, h: ch };
+export function getLayoutNames() {
+  return layouts.map(l => ({ id: l.id, name: l.name }));
+}
+
+export function getLayoutsByPanelCount(count) {
+  return layouts.filter(l => l.panels.length === count);
+}
+
+export function getDefaultLayoutForCount(count) {
+  const matching = getLayoutsByPanelCount(count);
+  return matching[0] || layouts[0];
 }

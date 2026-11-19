@@ -1,96 +1,82 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Neon Shore Cover Studio</title>
-<link rel="stylesheet" href="./style.css">
-<style>
-@font-face { font-family: 'Archivo Black'; src: url('./fonts/ArchivoBlack-Regular.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-@font-face { font-family: 'Anton'; src: url('./fonts/Anton-Regular.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-@font-face { font-family: 'Pacifico'; src: url('./fonts/Pacifico-Regular.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-@font-face { font-family: 'Bebas Neue'; src: url('./fonts/BebasNeue-Regular.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Create GTA 6-style cover art with neon color grades, custom layouts, and Archivo Black lettering">
+  <title>Neon Shore Cover Studio</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main class="studio" id="studio">
-  <aside class="side" id="side">
-    <header class="brand">
-      <div class="logo">NS</div>
-      <div>
-        <h1>Neon Shore</h1>
-        <p class="tag">Cover Studio</p>
-      </div>
+  <div class="app">
+    <header>
+      <h1>Neon Shore Cover Studio</h1>
+      <p class="tagline">GTA 6-style cover art maker</p>
     </header>
 
-    <section class="group">
-      <h2>Photos</h2>
-      <div id="dropzone" class="dropzone">
-        <input id="photo" type="file" accept="image/*" multiple hidden>
-        <p><strong>Add photos</strong><span>drop files here or click to browse</span></p>
-      </div>
-      <div id="thumbs" class="thumbs"></div>
-    </section>
+    <main>
+      <section class="canvas-area">
+        <canvas id="preview" width="1080" height="1080"></canvas>
+        <div class="canvas-overlay" id="overlay"></div>
+      </section>
 
-    <section class="group">
-      <h2>Layout</h2>
-      <div id="layouts" class="chiprow"></div>
-      <label class="row"><span>Panel gap</span><input id="gap" type="range" min="0" max="6" step="0.2" value="1.4"><b id="gapVal">1.4</b></label>
-      <label class="row"><span>Panel border</span><select id="border"><option value="white">White frame</option><option value="ink">Inked edges</option><option value="none">None</option></select></label>
-    </section>
+      <aside class="controls">
+        <div class="control-group">
+          <label>Photos</label>
+          <input type="file" id="photoInput" accept="image/*" multiple>
+          <div class="sample-buttons">
+            <button type="button" data-sample="boulevard.jpg">Boulevard</button>
+            <button type="button" data-sample="pier.jpg">Pier</button>
+          </div>
+          <div class="photo-strip" id="photoStrip"></div>
+        </div>
 
-    <section class="group">
-      <h2>Color grade</h2>
-      <div id="grades" class="chiprow"></div>
-      <label class="check"><input id="panelGradeToggle" type="checkbox"> This panel only: <select id="panelGrade" disabled><option value="">(cover grade)</option></select></label>
-    </section>
+        <div class="control-group">
+          <label>Layout</label>
+          <select id="layoutSelect"></select>
+        </div>
 
-    <section class="group">
-      <h2>Lettering</h2>
-      <label class="row"><span>Title</span><input id="title" type="text" maxlength="26" value="NEON SHORE"></label>
-      <label class="row"><span>Subtitle</span><input id="subtitle" type="text" maxlength="40" value="a vice city story"></label>
-      <label class="row"><span>Title style</span><select id="titleStyle"><option value="gta">GTA poster</option><option value="sunset">Sunset gradient</option><option value="white">Solid white</option></select></label>
-      <label class="row"><span>Title font</span><select id="titleFont"><option value="Archivo Black">Archivo Black</option><option value="Anton">Anton</option><option value="Bebas Neue">Bebas Neue</option><option value="Pacifico">Pacifico</option></select></label>
-      <label class="row"><span>Outline width</span><input id="titleStroke" type="range" min="6" max="20" step="1" value="14"><b id="titleStrokeVal">14%</b></label>
-      <label class="row"><span>Title size</span><input id="titleSize" type="range" min="30" max="110" value="62"><b id="titleSizeVal">62</b></label>
-      <label class="row"><span>Title position</span><input id="titleY" type="range" min="40" max="80" value="66"><b id="titleYVal">66</b></label>
-      <label class="row"><span>Badge text</span><input id="badgeText" type="text" maxlength="24" value="City of Dreams"></label>
-      <label class="check"><input id="badge" type="checkbox" checked> Show badge ribbon</label>
-    </section>
+        <div class="control-group">
+          <label>Color Grade</label>
+          <select id="gradeSelect"></select>
+        </div>
 
-    <section class="group">
-      <h2>Heat &amp; effects</h2>
-      <div class="row"><span>Heat meter</span><div id="stars" class="stars"></div></div>
-      <label class="check"><input id="halftone" type="checkbox" checked> Halftone title block</label>
-      <label class="check"><input id="grain" type="checkbox" checked> Film grain</label>
-      <label class="check"><input id="vignette" type="checkbox" checked> Vignette</label>
-    </section>
+        <div class="control-group">
+          <label>Caption</label>
+          <input type="text" id="captionInput" placeholder="Main title">
+          <input type="text" id="subtitleInput" placeholder="Subtitle (optional)">
+        </div>
 
-    <section class="group actions">
-      <h2>Export PNG</h2>
-      <div class="exports">
-        <button data-w="1080" data-h="1080">1080×1080</button>
-        <button data-w="1080" data-h="1350">1080×1350</button>
-        <button data-w="1920" data-h="1080">1920×1080</button>
-        <button data-w="1080" data-h="1920">Story 1080×1920</button>
-      </div>
-      <p id="status" role="status"></p>
-    </section>
-  </aside>
+        <div class="control-group">
+          <label>Font</label>
+          <select id="fontSelect">
+            <option value="ArchivoBlack">Archivo Black</option>
+            <option value="Anton">Anton</option>
+            <option value="BebasNeue">Bebas Neue</option>
+            <option value="Pacifico">Pacifico</option>
+          </select>
+        </div>
 
-  <section class="stage" id="stage">
-    <div class="toolbar">
-      <div class="tbgroup">
-        <button id="undo" title="Undo (Ctrl+Z)">↶</button>
-        <button id="redo" title="Redo (Ctrl+Shift+Z)">↷</button>
-        <button id="randomize" title="Randomize">🎲</button>
-        <button id="reset" title="Reset">⟲</button>
-      </div>
-      <p id="hint">Click a panel to select · drag to move · wheel to zoom</p>
-    </div>
-    <canvas id="cover" width="1080" height="1080"></canvas>
-  </section>
-</main>
-<script type="module" src="./src/main.js"></script>
+        <div class="control-group">
+          <label>Zoom / Pan</label>
+          <input type="range" id="zoomSlider" min="1" max="3" step="0.05" value="1">
+          <p class="hint">Drag on canvas to pan. Wheel to zoom.</p>
+        </div>
+
+        <div class="control-group exports">
+          <label>Export</label>
+          <button id="exportSquare">1080×1080</button>
+          <button id="exportPortrait">1080×1350</button>
+          <button id="exportLandscape">1920×1080</button>
+        </div>
+
+        <div class="control-group">
+          <button id="randomizeBtn" class="randomize">Randomize</button>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
 </body>
 </html>

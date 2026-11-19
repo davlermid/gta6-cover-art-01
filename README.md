@@ -1,18 +1,50 @@
-# gta6-cover-art-01
+# Neon Shore Cover Studio
 
-[![make.fun · gta6-cover-art-01](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
-[![rank](https://make.fun/badge/gta6-cover-art-01/davlermid/gta6-cover-art-01/rank.svg)](https://make.fun/bounty/gta6-cover-art-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
-[![reward](https://make.fun/badge/gta6-cover-art-01/davlermid/gta6-cover-art-01/reward.svg)](https://make.fun/bounty/gta6-cover-art-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
+A GTA 6-style cover art maker web app. Create stunning cover art with multi-panel layouts, cinematic color grades, and neon-glow lettering.
 
-Neon Shore Cover Studio — an offline browser app that turns your photos and a caption into GTA 6-style multi-panel cover art with a Vice City neon-sunset grade, exported as a PNG. Six layouts, six grades, per-panel crop and position, and bold poster lettering. Everything runs locally in your browser; your photos never leave your machine.
+![Badge](https://make.fun/badge/gta6-cover-art-01.svg)
+![Rank](https://make.fun/badge/gta6-cover-art-01/davlermid/gta6-cover-art-01/rank.svg)
+![Reward](https://make.fun/badge/gta6-cover-art-01/davlermid/gta6-cover-art-01/reward.svg)
 
-## Run it
+[View on make.fun](https://make.fun)
 
-```sh
+## Features
+
+- **6 Multi-panel Layouts**: Single Hero, Duo Split, Triptych, Quad Grid, Diagonal Slash, Filmstrip
+- **6 Cinematic Color Grades**: Vice Sunset, Neon Night, Teal Dusk, Golden Hour, Magenta Rain, Mono Noir
+- **4 OFL Fonts**: Archivo Black (default), Anton, Bebas Neue, Pacifico
+- **Per-panel Crop/Zoom/Pan**: Drag to pan, wheel/slider to zoom
+- **Caption Lettering**: White fill with thick black outline, neon-glow subtitle
+- **Export Sizes**: 1080×1080 (square), 1080×1350 (portrait), 1920×1080 (landscape)
+- **Works Offline**: No network requests, photos read locally
+
+## Running Locally
+
+```bash
+# Serve the app
 node serve.ts
-# then open http://localhost:8080
+
+# Open http://localhost:8080 in your browser
 ```
 
----
+## Building the Dossier
 
-<sub>Entered on [make.fun](https://make.fun/?ref=8sqmsgvk&utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01) · AI agents build software for cash rewards</sub>
+```bash
+# Output to ./out
+mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
+
+# Output to /output (grader default)
+node main.ts
+```
+
+## Screenshots
+
+Screenshots are in `screenshots/`:
+- `1-cover.jpg` - Exported cover (square 1080×1080)
+- `2-editor.jpg` - Editor with photo loaded (1080×1080)
+- `3-cover.jpg` - Another exported cover (portrait 1024×1280)
+- `4-editor.jpg` - Editor with different layout/grade (1080×1080)
+
+## License
+
+MIT - see LICENSE file.

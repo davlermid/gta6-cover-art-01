@@ -1,72 +1,223 @@
-// The color grades: each is a photo filter plus a stack of gradient layers blended over the photo
-// (soft-light / screen / multiply / overlay), all drawn on the canvas so the export matches the preview.
+// Neon Shore Cover Studio - Color Grades
+// 6 color grades applied on canvas via pixel manipulation
 
-export const GRADES = {
-  'vice-sunset': {
+export const grades = [
+  {
+    id: 'vice-sunset',
     name: 'Vice Sunset',
-    filter: 'saturate(1.2) contrast(1.06)',
-    layers: [
-      { kind: 'lin', x0: 0, y0: 0, x1: 0, y1: 1, op: 'soft-light', stops: [[0, 'rgba(64,22,130,0.55)'], [0.55, 'rgba(255,94,58,0.22)'], [1, 'rgba(255,0,128,0.5)']] },
-      { kind: 'lin', x0: 0, y0: 0, x1: 0, y1: 1, op: 'screen', stops: [[0, 'rgba(255,60,150,0)'], [0.75, 'rgba(255,60,150,0)'], [1, 'rgba(255,120,60,0.28)']] },
-    ],
+    // Hot pink/orange sunset vibe
+    apply: (data, width, height) => {
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        // Luminance
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+        // Sunset gradient map
+        if (lum < 64) {
+          data[i] = Math.min(255, lum * 0.8 + 40);     // Deep reds
+          data[i + 1] = Math.min(255, lum * 0.3 + 10);
+          data[i + 2] = Math.min(255, lum * 0.5 + 20);
+        } else if (lum < 128) {
+          data[i] = Math.min(255, lum * 1.2 + 20);     // Oranges
+          data[i + 1] = Math.min(255, lum * 0.6 + 30);
+          data[i + 2] = Math.min(255, lum * 0.2 + 10);
+        } else if (lum < 192) {
+          data[i] = 255;                               // Hot pinks
+          data[i + 1] = Math.min(255, lum * 0.4 + 60);
+          data[i + 2] = Math.min(255, lum * 0.7 + 80);
+        } else {
+          data[i] = 255;                               // Bright highlights
+          data[i + 1] = Math.min(255, lum * 0.6 + 100);
+          data[i + 2] = Math.min(255, lum * 0.5 + 120);
+        }
+      }
+    },
   },
-  'neon-night': {
+  {
+    id: 'neon-night',
     name: 'Neon Night',
-    filter: 'saturate(1.3) contrast(1.15) brightness(0.92)',
-    layers: [
-      { kind: 'lin', x0: 0, y0: 0, x1: 0, y1: 1, op: 'multiply', stops: [[0, 'rgba(24,16,64,0.75)'], [1, 'rgba(10,6,30,0.85)']] },
-      { kind: 'lin', x0: 0, y0: 1, x1: 1, y1: 0, op: 'screen', stops: [[0, 'rgba(0,220,255,0.22)'], [0.5, 'rgba(0,0,0,0)'], [1, 'rgba(255,40,180,0.3)']] },
-    ],
+    // Deep blues with cyan/pink neon accents
+    apply: (data, width, height) => {
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+        if (lum < 64) {
+          data[i] = Math.min(255, lum * 0.2 + 10);     // Deep navy
+          data[i + 1] = Math.min(255, lum * 0.1 + 5);
+          data[i + 2] = Math.min(255, lum * 0.5 + 30);
+        } else if (lum < 128) {
+          data[i] = Math.min(255, lum * 0.4 + 20);     // Teal midtones
+          data[i + 1] = Math.min(255, lum * 0.8 + 40);
+          data[i + 2] = Math.min(255, lum * 0.6 + 60);
+        } else if (lum < 192) {
+          data[i] = Math.min(255, lum * 0.7 + 60);     // Cyan highlights
+          data[i + 1] = Math.min(255, lum * 1.0 + 80);
+          data[i + 2] = Math.min(255, lum * 0.8 + 100);
+        } else {
+          data[i] = 255;                               // Pink neon blows
+          data[i + 1] = Math.min(255, lum * 0.3 + 50);
+          data[i + 2] = Math.min(255, lum * 0.9 + 150);
+        }
+      }
+    },
   },
-  'golden-hour': {
+  {
+    id: 'teal-dusk',
+    name: 'Teal Dusk',
+    // Teal/orange cinematic look
+    apply: (data, width, height) => {
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+        if (lum < 64) {
+          data[i] = Math.min(255, lum * 0.3 + 15);     // Dark teal shadows
+          data[i + 1] = Math.min(255, lum * 0.5 + 25);
+          data[i + 2] = Math.min(255, lum * 0.4 + 20);
+        } else if (lum < 128) {
+          data[i] = Math.min(255, lum * 0.6 + 30);     // Teal midtones
+          data[i + 1] = Math.min(255, lum * 0.9 + 50);
+          data[i + 2] = Math.min(255, lum * 0.5 + 30);
+        } else if (lum < 192) {
+          data[i] = Math.min(255, lum * 1.1 + 60);     // Orange-teal highlights
+          data[i + 1] = Math.min(255, lum * 0.8 + 80);
+          data[i + 2] = Math.min(255, lum * 0.3 + 40);
+        } else {
+          data[i] = 255;                               // Warm highlights
+          data[i + 1] = Math.min(255, lum * 0.9 + 120);
+          data[i + 2] = Math.min(255, lum * 0.4 + 60);
+        }
+      }
+    },
+  },
+  {
+    id: 'golden-hour',
     name: 'Golden Hour',
-    filter: 'saturate(1.15) contrast(1.03) brightness(1.05)',
-    layers: [
-      { kind: 'lin', x0: 0, y0: 0, x1: 0, y1: 1, op: 'soft-light', stops: [[0, 'rgba(255,200,90,0.4)'], [1, 'rgba(255,110,40,0.4)']] },
-      { kind: 'lin', x0: 0, y0: 1, x1: 0, y1: 0, op: 'overlay', stops: [[0, 'rgba(120,60,0,0.25)'], [1, 'rgba(0,0,0,0)']] },
-    ],
-  },
-  'teal-pink': {
-    name: 'Teal & Pink',
-    filter: 'saturate(1.25) contrast(1.12)',
-    layers: [
-      { kind: 'lin', x0: 0, y0: 0, x1: 1, y1: 1, op: 'multiply', stops: [[0, 'rgba(0,150,170,0.55)'], [1, 'rgba(15,30,60,0.6)']] },
-      { kind: 'lin', x0: 1, y0: 0, x1: 0, y1: 1, op: 'screen', stops: [[0, 'rgba(0,0,0,0)'], [1, 'rgba(255,70,160,0.32)']] },
-    ],
-  },
-  'mono-ink': {
-    name: 'Mono Ink',
-    filter: 'grayscale(1) contrast(1.25) brightness(1.02)',
-    layers: [
-      { kind: 'lin', x0: 0, y0: 0, x1: 0, y1: 1, op: 'multiply', stops: [[0, 'rgba(210,200,220,0.35)'], [1, 'rgba(30,25,45,0.45)']] },
-    ],
-  },
-  'candy-pop': {
-    name: 'Candy Pop',
-    filter: 'saturate(1.5) contrast(1.1) brightness(1.06)',
-    layers: [
-      { kind: 'lin', x0: 0, y0: 0, x1: 0, y1: 1, op: 'soft-light', stops: [[0, 'rgba(120,220,255,0.5)'], [1, 'rgba(255,110,200,0.5)']] },
-      { kind: 'lin', x0: 0, y0: 1, x1: 1, y1: 0, op: 'overlay', stops: [[0, 'rgba(255,180,80,0.18)'], [1, 'rgba(0,0,0,0)']] },
-    ],
-  },
-};
+    // Warm golden sunlight
+    apply: (data, width, height) => {
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
 
-export const GRADE_IDS = Object.keys(GRADES);
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
 
-/** Applies a grade's gradient layers across `x, y, w, h` on an already-drawn photo region. */
-export function applyGradeLayers(ctx, x, y, w, h, grade) {
-  for (const layer of grade.layers) {
-    let grad;
-    if (layer.kind === 'lin') {
-      grad = ctx.createLinearGradient(x + layer.x0 * w, y + layer.y0 * h, x + layer.x1 * w, y + layer.y1 * h);
-    } else {
-      grad = ctx.createRadialGradient(x + layer.x0 * w, y + layer.y0 * h, 0, x + layer.x0 * w, y + layer.y0 * h, Math.max(w, h) * layer.r);
-    }
-    for (const [pos, color] of layer.stops) grad.addColorStop(pos, color);
-    ctx.save();
-    ctx.globalCompositeOperation = layer.op;
-    ctx.fillStyle = grad;
-    ctx.fillRect(x, y, w, h);
-    ctx.restore();
-  }
+        if (lum < 64) {
+          data[i] = Math.min(255, lum * 1.0 + 40);     // Deep gold shadows
+          data[i + 1] = Math.min(255, lum * 0.5 + 20);
+          data[i + 2] = Math.min(255, lum * 0.2 + 5);
+        } else if (lum < 128) {
+          data[i] = Math.min(255, lum * 1.2 + 60);     // Rich gold midtones
+          data[i + 1] = Math.min(255, lum * 0.9 + 50);
+          data[i + 2] = Math.min(255, lum * 0.3 + 15);
+        } else if (lum < 192) {
+          data[i] = 255;                               // Bright gold highlights
+          data[i + 1] = Math.min(255, lum * 1.0 + 100);
+          data[i + 2] = Math.min(255, lum * 0.5 + 40);
+        } else {
+          data[i] = 255;                               // Blown highlights
+          data[i + 1] = 255;
+          data[i + 2] = Math.min(255, lum * 0.7 + 80);
+        }
+      }
+    },
+  },
+  {
+    id: 'magenta-rain',
+    name: 'Magenta Rain',
+    // Purple/magenta with cyan accents
+    apply: (data, width, height) => {
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+        if (lum < 64) {
+          data[i] = Math.min(255, lum * 0.6 + 30);     // Deep purple shadows
+          data[i + 1] = Math.min(255, lum * 0.1 + 5);
+          data[i + 2] = Math.min(255, lum * 0.8 + 40);
+        } else if (lum < 128) {
+          data[i] = Math.min(255, lum * 1.0 + 50);     // Magenta midtones
+          data[i + 1] = Math.min(255, lum * 0.3 + 20);
+          data[i + 2] = Math.min(255, lum * 0.9 + 60);
+        } else if (lum < 192) {
+          data[i] = 255;                               // Bright magenta
+          data[i + 1] = Math.min(255, lum * 0.5 + 60);
+          data[i + 2] = Math.min(255, lum * 0.7 + 100);
+        } else {
+          data[i] = 255;                               // Cyan-magenta highlights
+          data[i + 1] = Math.min(255, lum * 0.7 + 120);
+          data[i + 2] = 255;
+        }
+      }
+    },
+  },
+  {
+    id: 'mono-noir',
+    name: 'Mono Noir',
+    // High contrast black & white with slight tint
+    apply: (data, width, height) => {
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+        // High contrast S-curve
+        let contrast = lum / 255;
+        contrast = contrast < 0.5
+          ? 2 * contrast * contrast
+          : 1 - 2 * (1 - contrast) * (1 - contrast);
+        contrast = Math.round(contrast * 255);
+
+        // Slight cyan tint in shadows, warm in highlights
+        if (contrast < 128) {
+          data[i] = Math.min(255, contrast * 0.95);
+          data[i + 1] = Math.min(255, contrast * 1.02);
+          data[i + 2] = Math.min(255, contrast * 1.05);
+        } else {
+          data[i] = Math.min(255, contrast * 1.03);
+          data[i + 1] = Math.min(255, contrast * 1.01);
+          data[i + 2] = Math.min(255, contrast * 0.97);
+        }
+      }
+    },
+  },
+];
+
+export function getGrade(id) {
+  return grades.find(g => g.id === id) || grades[0];
+}
+
+export function getGradeNames() {
+  return grades.map(g => ({ id: g.id, name: g.name }));
+}
+
+export function getAllGrades() {
+  return [...grades];
+}
+
+export function getNextGrade(currentId) {
+  const index = grades.findIndex(g => g.id === currentId);
+  const nextIndex = (index + 1) % grades.length;
+  return grades[nextIndex].id;
+}
+
+export function getPrevGrade(currentId) {
+  const index = grades.findIndex(g => g.id === currentId);
+  const prevIndex = (index - 1 + grades.length) % grades.length;
+  return grades[prevIndex].id;
 }
