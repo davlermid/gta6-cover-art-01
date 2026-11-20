@@ -1,8 +1,6 @@
 # Neon Shore Cover Studio
 
-A GTA 6-style cover art maker web app for the make.fun gta6-cover-art-01 competition. Create neon-soaked, Vice City-inspired cover art with multiple layouts, color grades, and custom lettering — all running offline in your browser.
-
-## Live Badges
+A GTA 6-style cover art maker web app. Create stunning neon-drenched cover art with multi-panel layouts, cinematic color grades, and bold typography — all running offline in your browser.
 
 ![make.fun badge](https://make.fun/badge/gta6-cover-art-01.svg)
 ![rank badge](https://make.fun/badge/gta6-cover-art-01/davlermid/gta6-cover-art-01/rank.svg)
@@ -12,75 +10,56 @@ A GTA 6-style cover art maker web app for the make.fun gta6-cover-art-01 competi
 
 ## Features
 
-- **6 Multi-panel Layouts**: Single Hero, Duo Split, Triptych, Quad Grid, Diagonal Slash, Filmstrip
-- **6 Color Grades**: Vice Sunset, Neon Night, Teal Dusk, Golden Hour, Magenta Rain, Mono Noir
-- **4 OFL Fonts**: Archivo Black (default), Anton, Bebas Neue, Pacifico
-- **Per-panel crop/zoom/pan** with drag and wheel controls
-- **Bold lettering** with thick black outline, white fill, and neon-glow subtitle
-- **PNG Export** at 3 sizes: Square (1080×1080), Portrait (1080×1350), Landscape (1920×1080)
-- **Built-in sample photos** + drag-and-drop your own images
-- **Randomize button** for instant inspiration
-- **Keyboard shortcuts**: 1-6 for layouts, arrows for layout/grade navigation
-- **Fully offline** — no network requests, all assets local
+- **6 Multi-panel layouts**: Single Hero, Duo Split, Triptych, Quad Grid, Diagonal Slash, Filmstrip
+- **6 Cinematic color grades**: Vice Sunset, Neon Night, Teal Dusk, Golden Hour, Magenta Rain, Mono Noir
+- **4 OFL fonts**: Archivo Black (default), Anton, Bebas Neue, Pacifico
+- **Per-panel crop/zoom/pan**: Drag to pan, scroll/wheel to zoom each panel independently
+- **GTA-style lettering**: White fill with thick black outline, neon-glow subtitle
+- **PNG export**: 1080×1080 (square), 1080×1350 (portrait), 1920×1080 (landscape)
+- **Built-in samples**: Boulevard and Pier photos included
+- **Fully offline**: No network requests, runs from static files
 
-## Quick Start
+## Running Locally
 
 ```bash
-# Serve locally
+# Serve the app
 node serve.ts
-
 # Open http://localhost:8080
 ```
 
-Or open `app/index.html` directly in a browser (some features require a local server due to CORS for fonts).
+Or open `app/index.html` directly in a browser (some features may be limited by CORS).
 
-## Build for Submission
+## Building for Submission
 
 ```bash
-# Output to ./out
-mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
-
-# The dossier.json and app/ will be in ./out
-```
-
-## Project Structure
-
-```
-├── app/
-│   ├── index.html          # Main editor page
-│   ├── style.css           # Neon noir theme
-│   ├── fonts/              # 4 OFL fonts (Archivo Black, Anton, Bebas Neue, Pacifico)
-│   ├── samples/            # Sample photos (boulevard.jpg, pier.jpg)
-│   └── src/
-│       ├── main.js         # UI wiring & event handlers
-│       ├── state.js        # App state management
-│       ├── layouts.js      # 6 panel layouts (normalized coords)
-│       ├── grades.js       # 6 color grade shaders
-│       ├── render.js       # Canvas renderer & PNG export
-│       └── shots.js        # Screenshot helper
-├── screenshots/            # 4 JPEG screenshots for judging
-├── main.ts                 # Build script (copies app/ + writes dossier.json)
-├── serve.ts                # Dev server (static files on :8080)
-├── shots.json              # Screenshot definitions
-├── verify.mjs              # Playwright verification script
-└── vendor/makefun-app.ts   # make.fun dossier library
+# Copies app/ and screenshots/ to output dir and writes dossier.json
+MAKEFUN_OUTPUT_DIR=out node main.ts
 ```
 
 ## Screenshots
 
-The `screenshots/` folder contains 4 renders captured by `verify.mjs`:
-- `1-cover.jpg` — Exported cover (portrait)
-- `2-editor.jpg` — Editor with photo loaded
-- `3-cover.jpg` — Another exported cover (landscape)
-- `4-editor.jpg` — Editor with different layout/grade
+The `shots.json` defines four automated shots for the make.fun submission:
+1. **1-cover.jpg** — Cover export (1080×1080) with Pier photo, Vice Sunset grade
+2. **2-editor.jpg** — Editor view (1280×720) with Boulevard photo, Neon Night grade
+3. **3-cover.jpg** — Cover export (1080×1080) with Boulevard photo, Golden Hour grade
+4. **4-editor.jpg** — Editor view (1280×720) with Pier photo, Magenta Rain grade
 
-## Tech Notes
+## Keyboard Shortcuts
 
-- **No frameworks** — vanilla ES modules, Canvas 2D API
-- **Offline-first** — all fonts, images, and code bundled under `app/`
-- **OFL fonts only** — downloaded from google/fonts, no proprietary typefaces
-- **No Rockstar IP** — original neon aesthetic inspired by GTA 6 marketing style
-- **ESM only** — runs in modern browsers without transpilation
+- `R` — Randomize everything
+- `1` — Export 1080×1080
+- `2` — Export 1080×1350
+- `3` — Export 1920×1080
+- `←` / `→` — Switch active panel (multi-panel layouts)
+- `S` — Copy shot URL to clipboard (share current state)
+
+## Fonts
+
+All fonts are SIL OFL licensed, downloaded from Google Fonts:
+- Archivo Black
+- Anton
+- Bebas Neue
+- Pacifico
 
 ## License
 

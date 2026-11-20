@@ -1,80 +1,90 @@
-// Neon Shore Cover Studio - App State
-// Manages photos, panels, caption, layout, grade, fonts
+// App state management for Neon Shore Cover Studio
 
 export const state = {
-  photos: [],
-  currentPhotoIndex: -1,
-  panels: [],
-  caption: '',
-  subtitle: '',
+  // Photo management
+  photos: new Map(), // key -> { img, name, width, height }
+  currentPhotoKey: null,
+  
+  // Panel data for multi-panel layouts
+  panels: [], // array of { key, crop: {x, y, scale}, photoKey }
+  
+  // Text
+  caption: 'Vice City Nights',
+  subtitle: 'Neon Shore',
+  
+  // Layout & Grade
   layoutIndex: 0,
   gradeIndex: 0,
-  fontIndex: 0,
-  exportSizes: [
-    { name: 'Square (1080x1080)', width: 1080, height: 1080 },
-    { name: 'Portrait (1080x1350)', width: 1080, height: 1350 },
-    { name: 'Landscape (1920x1080)', width: 1920, height: 1080 },
-  ],
+  
+  // Font
+  fontFamily: 'Archivo Black',
+  
+  // Canvas
+  canvasWidth: 1080,
+  canvasHeight: 1080,
+  
+  // Interaction
+  isDragging: false,
+  dragStart: { x: 0, y: 0 },
+  activePanelIndex: 0,
+  
+  // Zoom per panel
+  panelZooms: [], // array of scale values
+  
+  // Available fonts
   fonts: [
-    { name: 'Archivo Black', family: 'ArchivoBlack', file: 'ArchivoBlack-Regular.ttf' },
-    { name: 'Anton', family: 'Anton', file: 'Anton-Regular.ttf' },
-    { name: 'Bebas Neue', family: 'BebasNeue', file: 'BebasNeue-Regular.ttf' },
-    { name: 'Pacifico', family: 'Pacifico', file: 'Pacifico-Regular.ttf' },
+    { name: 'Archivo Black', family: 'Archivo Black' },
+    { name: 'Anton', family: 'Anton' },
+    { name: 'Bebas Neue', family: 'Bebas Neue' },
+    { name: 'Pacifico', family: 'Pacifico' },
   ],
+  
+  // Layouts will be loaded from layouts.js
+  layouts: [],
+  
+  // Grades will be loaded from grades.js
+  grades: [],
 };
 
-export function addPhoto(file, name) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const photo = { file, name, img, width: img.naturalWidth, height: img.naturalHeight };
-      state.photos.push(photo);
-      if (state.currentPhotoIndex === -1) {
-        state.currentPhotoIndex = 0;
-        initPanelsForPhoto(photo);
-      }
-      resolve(photo);
-    };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
+export function resetState() {
+  state.panels = [];
+  state.panelZooms = [];
+  state.currentPhotoKey = null;
+  state.activePanelIndex = 0;
+  state.caption = 'Vice City Nights';
+  state.subtitle = 'Neon Shore';
+  state.layoutIndex = 0;
+  state.gradeIndex = 0;
+  state.fontFamily = 'Archivo Black';
+}
+
+export function addPhoto(key, img, name) {
+  state.photos.set(key, {
+    img,
+    name,
+    width: img.width,
+    height: img.height,
   });
-}
-
-export function initPanelsForPhoto(photo) {
-  const layout = layouts[state.layoutIndex];
-  state.panels = layout.panels.map((panel, i) => ({
-    ...panel,
-    photoIndex: 0,
-    zoom: 1,
-    offsetX: 0,
-    offsetY: 0,
-    dragging: false,
-    dragStartX: 0,
-    dragStartY: 0,
-    dragStartOffsetX: 0,
-    dragStartOffsetY: 0,
-  }));
-}
-
-export function selectPhoto(index) {
-  if (index >= 0 && index < state.photos.length) {
-    state.currentPhotoIndex = index;
-    initPanelsForPhoto(state.photos[index]);
+  if (!state.currentPhotoKey) {
+    state.currentPhotoKey = key;
   }
 }
 
+export function getCurrentPhoto() {
+  return state.currentPhotoKey ? state.photos.get(state.currentPhotoKey) : null;
+}
+
 export function setLayout(index) {
-  state.layoutIndex = index;
-  const photo = state.photos[state.currentPhotoIndex];
-  if (photo) initPanelsForPhoto(photo);
+  state.layoutIndex = Math.max(0, Math.min(index, state.layouts.length - 1));
+  rebuildPanels();
 }
 
 export function setGrade(index) {
-  state.gradeIndex = index;
+  state.gradeIndex = Math.max(0, Math.min(index, state.grades.length - 1));
 }
 
-export function setFont(index) {
-  state.fontIndex = index;
+export function setFont(family) {
+  state.fontFamily = family;
 }
 
 export function setCaption(text) {
@@ -85,46 +95,54 @@ export function setSubtitle(text) {
   state.subtitle = text;
 }
 
-export function getCurrentPhoto() {
-  return state.photos[state.currentPhotoIndex];
+export function setCanvasSize(w, h) {
+  state.canvasWidth = w;
+  state.canvasHeight = h;
 }
 
-export function getCurrentLayout() {
-  return layouts[state.layoutIndex];
+export function rebuildPanels() {
+  const layout = state.layouts[state.layoutIndex];
+  if (!layout) return;
+  
+  const photo = getCurrentPhoto();
+  if (!photo) return;
+  
+  state.panels = layout.panels.map((panelRect, i) => ({
+    ...panelRect,
+    photoKey: state.currentPhotoKey,
+    crop: { x: 0.5, y: 0.5, scale: 1 },
+  }));
+  
+  state.panelZooms = state.panels.map(() => 1);
+  state.activePanelIndex = 0;
 }
 
-export function getCurrentGrade() {
-  return grades[state.gradeIndex];
+export function updatePanelCrop(panelIndex, dx, dy) {
+  const panel = state.panels[panelIndex];
+  if (!panel) return;
+  
+  const zoom = state.panelZooms[panelIndex] || 1;
+  const sensitivity = 0.002 / zoom;
+  
+  panel.crop.x = Math.max(0, Math.min(1, panel.crop.x + dx * sensitivity));
+  panel.crop.y = Math.max(0, Math.min(1, panel.crop.y + dy * sensitivity));
 }
 
-export function getCurrentFont() {
-  return state.fonts[state.fontIndex];
+export function updatePanelZoom(panelIndex, delta) {
+  const zoom = Math.max(1, Math.min(3, (state.panelZooms[panelIndex] || 1) + delta));
+  state.panelZooms[panelIndex] = zoom;
+  
+  const panel = state.panels[panelIndex];
+  if (panel) {
+    panel.crop.scale = zoom;
+  }
 }
 
-export function randomize() {
-  if (state.photos.length === 0) return;
-  state.currentPhotoIndex = Math.floor(Math.random() * state.photos.length);
-  state.layoutIndex = Math.floor(Math.random() * layouts.length);
-  state.gradeIndex = Math.floor(Math.random() * grades.length);
-  state.fontIndex = Math.floor(Math.random() * state.fonts.length);
-  const captions = ['NEON SHORE', 'MIDNIGHT RUN', 'VICE CITY', 'SUNSET HEIST', 'NEON DREAMS', 'CRIMSON TIDE'];
-  const subtitles = ['Grand Theft Auto VI Style', 'Cover Art Studio', 'Neon Nights', 'Vice Vibes', 'Midnight Drive', 'Ocean Drive'];
-  state.caption = captions[Math.floor(Math.random() * captions.length)];
-  state.subtitle = subtitles[Math.floor(Math.random() * subtitles.length)];
-  initPanelsForPhoto(state.photos[state.currentPhotoIndex]);
+export function setActivePanel(index) {
+  state.activePanelIndex = Math.max(0, Math.min(index, state.panels.length - 1));
 }
 
-export function reset() {
-  state.photos = [];
-  state.currentPhotoIndex = -1;
-  state.panels = [];
-  state.caption = '';
-  state.subtitle = '';
-  state.layoutIndex = 0;
-  state.gradeIndex = 0;
-  state.fontIndex = 0;
+// Get current photo key (useful for URL sharing)
+export function getCurrentPhotoKey() {
+  return state.currentPhotoKey;
 }
-
-// Import layouts and grades (circular dependency avoided by importing here)
-import { layouts } from './layouts.js';
-import { grades } from './grades.js';

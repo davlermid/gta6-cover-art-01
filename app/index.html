@@ -4,94 +4,96 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Neon Shore Cover Studio</title>
+  <meta name="description" content="Create GTA-style cover art with neon color grades, custom layouts, and Archivo Black lettering">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌴</text></svg>">
   <link rel="stylesheet" href="style.css">
   <link rel="preload" href="fonts/ArchivoBlack-Regular.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="fonts/Anton-Regular.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="fonts/BebasNeue-Regular.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="fonts/Pacifico-Regular.ttf" as="font" type="font/ttf" crossorigin>
-  <meta name="theme-color" content="#0a0a0f">
 </head>
 <body>
-  <header class="app-header">
+  <header class="toolbar">
     <h1>Neon Shore Cover Studio</h1>
-    <p class="tagline">GTA 6-style cover art maker</p>
+    <div class="toolbar-actions">
+      <button id="btn-random" title="Randomize everything">Randomize</button>
+    </div>
   </header>
 
-  <main class="app-main">
-    <section class="editor-panel">
-      <div class="toolbar">
-        <div class="toolbar-group">
-          <label for="file-input" class="btn btn-primary">Load Photo</label>
-          <input type="file" id="file-input" accept="image/*" multiple hidden>
-        </div>
-        <div class="toolbar-group samples-group">
-          <span class="label">Samples:</span>
-          <div id="sample-buttons"></div>
-        </div>
+  <main class="workspace">
+    <section class="editor-pane">
+      <div class="canvas-wrap">
+        <canvas id="canvas" width="1080" height="1080"></canvas>
+        <div class="canvas-overlay" id="canvas-overlay"></div>
       </div>
-
-      <div class="canvas-wrapper">
-        <canvas id="main-canvas" width="800" height="600"></canvas>
-      </div>
-
       <div class="controls">
-        <div class="control-row">
-          <div class="control-group">
-            <label for="layout-select">Layout</label>
-            <select id="layout-select"></select>
-          </div>
-          <div class="control-group">
-            <label for="grade-select">Grade</label>
-            <select id="grade-select"></select>
-          </div>
-          <div class="control-group">
-            <label for="font-select">Font</label>
-            <select id="font-select"></select>
+        <div class="control-group">
+          <label>Photo</label>
+          <div class="photo-picker">
+            <input type="file" id="photo-input" accept="image/*" title="Load your own photo">
+            <select id="sample-picker">
+              <option value="">— Built-in samples —</option>
+              <option value="samples/boulevard.jpg">Boulevard</option>
+              <option value="samples/pier.jpg">Pier</option>
+            </select>
           </div>
         </div>
 
-        <div class="control-row">
-          <div class="control-group">
-            <label for="caption-input">Caption</label>
-            <input type="text" id="caption-input" placeholder="NEON SHORE" maxlength="32">
-          </div>
-          <div class="control-group">
-            <label for="subtitle-input">Subtitle</label>
-            <input type="text" id="subtitle-input" placeholder="Grand Theft Auto VI Style" maxlength="48">
-          </div>
+        <div class="control-group">
+          <label>Layout</label>
+          <select id="layout-picker"></select>
         </div>
 
-        <div class="control-row panels-row">
-          <div class="control-group">
-            <label>Panels</label>
-            <div id="panels-list"></div>
-          </div>
-          <div class="control-group zoom-group">
-            <label>Zoom <span id="zoom-value">1.00x</span></label>
-            <input type="range" id="zoom-slider" min="0.5" max="5" step="0.05" value="1">
-          </div>
+        <div class="control-group">
+          <label>Color Grade</label>
+          <select id="grade-picker"></select>
+        </div>
+
+        <div class="control-group">
+          <label>Caption</label>
+          <input type="text" id="caption-input" placeholder="Main title" value="Vice City Nights">
+        </div>
+
+        <div class="control-group">
+          <label>Subtitle</label>
+          <input type="text" id="subtitle-input" placeholder="Neon glow subtitle" value="Neon Shore">
+        </div>
+
+        <div class="control-group">
+          <label>Font</label>
+          <select id="font-picker"></select>
+        </div>
+
+        <div class="control-group">
+          <label>Zoom</label>
+          <input type="range" id="zoom-slider" min="1" max="3" step="0.05" value="1">
+          <span id="zoom-value">1.00×</span>
+        </div>
+
+        <div class="control-group">
+          <label>Pan</label>
+          <div class="pan-indicator" id="pan-indicator">Drag on canvas to pan</div>
+        </div>
+
+        <div class="export-group">
+          <button id="export-1080" data-w="1080" data-h="1080">Export 1080×1080</button>
+          <button id="export-1350" data-w="1080" data-h="1350">Export 1080×1350</button>
+          <button id="export-1920" data-w="1920" data-h="1080">Export 1920×1080</button>
         </div>
       </div>
     </section>
 
-    <aside class="export-panel">
-      <h2>Export</h2>
-      <div id="export-buttons">
-        <button type="button" id="export-0" class="btn btn-export">Square (1080×1080)</button>
-        <button type="button" id="export-1" class="btn btn-export">Portrait (1080×1350)</button>
-        <button type="button" id="export-2" class="btn btn-export">Landscape (1920×1080)</button>
+    <aside class="preview-pane" id="preview-pane">
+      <h2>Preview</h2>
+      <div class="preview-wrap">
+        <canvas id="preview-canvas" width="360" height="360"></canvas>
       </div>
-      <button type="button" id="randomize-btn" class="btn btn-random">Randomize</button>
-      
-      <div class="preview-section">
-        <h3>Preview</h3>
-        <canvas id="preview-canvas" width="200" height="200"></canvas>
-      </div>
+      <p class="preview-hint">Preview updates live as you edit</p>
     </aside>
   </main>
 
-  <footer class="app-footer">
-    <p>Neon Shore Cover Studio — Built for make.fun gta6-cover-art-01</p>
+  <footer class="statusbar">
+    <span id="status-text">Ready — load a photo to begin</span>
   </footer>
 
   <script type="module" src="src/main.js"></script>
