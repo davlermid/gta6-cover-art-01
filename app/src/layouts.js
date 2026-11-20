@@ -1,17 +1,11 @@
-// 6 multi-panel layouts for Neon Shore Cover Studio
-// Each layout defines panels as normalized rectangles (0-1 coordinates)
-
+// Neon Shore Cover Studio — 6 panel layouts in normalized coordinates (0-1)
 export const layouts = [
   {
-    name: 'Single Hero',
-    description: 'One full-frame panel',
-    panels: [
-      { x: 0, y: 0, w: 1, h: 1 },
-    ],
+    name: 'Hero',
+    panels: [{ x: 0, y: 0, w: 1, h: 1 }],
   },
   {
     name: 'Duo Split',
-    description: 'Vertical split, two equal panels',
     panels: [
       { x: 0, y: 0, w: 0.5, h: 1 },
       { x: 0.5, y: 0, w: 0.5, h: 1 },
@@ -19,7 +13,6 @@ export const layouts = [
   },
   {
     name: 'Triptych',
-    description: 'Three vertical panels',
     panels: [
       { x: 0, y: 0, w: 1/3, h: 1 },
       { x: 1/3, y: 0, w: 1/3, h: 1 },
@@ -28,7 +21,6 @@ export const layouts = [
   },
   {
     name: 'Quad Grid',
-    description: '2×2 grid of equal panels',
     panels: [
       { x: 0, y: 0, w: 0.5, h: 0.5 },
       { x: 0.5, y: 0, w: 0.5, h: 0.5 },
@@ -38,30 +30,26 @@ export const layouts = [
   },
   {
     name: 'Diagonal Slash',
-    description: 'Two panels split diagonally',
     panels: [
-      { x: 0, y: 0, w: 1, h: 1, clip: 'lower' },
-      { x: 0, y: 0, w: 1, h: 1, clip: 'upper' },
+      { x: 0, y: 0, w: 1, h: 0.6 },
+      { x: 0, y: 0.6, w: 1, h: 0.4 },
     ],
   },
   {
     name: 'Filmstrip',
-    description: 'Horizontal strip of 4 panels',
     panels: [
-      { x: 0, y: 0, w: 0.25, h: 1 },
-      { x: 0.25, y: 0, w: 0.25, h: 1 },
-      { x: 0.5, y: 0, w: 0.25, h: 1 },
-      { x: 0.75, y: 0, w: 0.25, h: 1 },
+      { x: 0, y: 0, w: 1, h: 0.25 },
+      { x: 0, y: 0.25, w: 1, h: 0.25 },
+      { x: 0, y: 0.5, w: 1, h: 0.25 },
+      { x: 0, y: 0.75, w: 1, h: 0.25 },
     ],
   },
 ];
 
-// Get layout by name (case-insensitive, useful for URL params)
 export function getLayoutByName(name) {
-  return layouts.find(l => l.name.toLowerCase() === name.toLowerCase());
+  return layouts.find((l) => l.name === name) || layouts[0];
 }
 
-// Get layout index by name
-export function getLayoutIndexByName(name) {
-  return layouts.findIndex(l => l.name.toLowerCase() === name.toLowerCase());
+export function getLayoutIndex(name) {
+  return layouts.findIndex((l) => l.name === name);
 }

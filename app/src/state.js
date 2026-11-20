@@ -1,148 +1,89 @@
-// App state management for Neon Shore Cover Studio
+// Neon Shore Cover Studio — app state
+import { layouts } from './layouts.js';
+import { grades } from './grades.js';
 
 export const state = {
-  // Photo management
-  photos: new Map(), // key -> { img, name, width, height }
-  currentPhotoKey: null,
-  
-  // Panel data for multi-panel layouts
-  panels: [], // array of { key, crop: {x, y, scale}, photoKey }
-  
-  // Text
-  caption: 'Vice City Nights',
-  subtitle: 'Neon Shore',
-  
-  // Layout & Grade
+  photos: [],
+  currentPhotoIndex: -1,
+  panels: [],
+  caption: '',
+  subtitle: '',
   layoutIndex: 0,
   gradeIndex: 0,
-  
-  // Font
   fontFamily: 'Archivo Black',
-  
-  // Canvas
-  canvasWidth: 1080,
-  canvasHeight: 1080,
-  
-  // Interaction
-  isDragging: false,
-  dragStart: { x: 0, y: 0 },
-  activePanelIndex: 0,
-  
-  // Zoom per panel
-  panelZooms: [], // array of scale values
-  
-  // Available fonts
-  fonts: [
-    { name: 'Archivo Black', family: 'Archivo Black' },
-    { name: 'Anton', family: 'Anton' },
-    { name: 'Bebas Neue', family: 'Bebas Neue' },
-    { name: 'Pacifico', family: 'Pacifico' },
+  exportSizes: [
+    { name: 'Square (1080x1080)', width: 1080, height: 1080 },
+    { name: 'Portrait (1080x1350)', width: 1080, height: 1350 },
+    { name: 'Landscape (1920x1080)', width: 1920, height: 1080 },
   ],
-  
-  // Layouts will be loaded from layouts.js
-  layouts: [],
-  
-  // Grades will be loaded from grades.js
-  grades: [],
 };
 
-export function resetState() {
-  state.panels = [];
-  state.panelZooms = [];
-  state.currentPhotoKey = null;
-  state.activePanelIndex = 0;
-  state.caption = 'Vice City Nights';
-  state.subtitle = 'Neon Shore';
-  state.layoutIndex = 0;
-  state.gradeIndex = 0;
-  state.fontFamily = 'Archivo Black';
+export function addPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const photo = { file, img, name: file.name };
+      state.photos.push(photo);
+      state.currentPhotoIndex = state.photos.length - 1;
+      initPanelsForPhoto(photo);
+      resolve(photo);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
 }
 
-export function addPhoto(key, img, name) {
-  state.photos.set(key, {
-    img,
-    name,
-    width: img.width,
-    height: img.height,
-  });
-  if (!state.currentPhotoKey) {
-    state.currentPhotoKey = key;
-  }
+export function initPanelsForPhoto(photo) {
+  const layout = layouts[state.layoutIndex];
+  state.panels = layout.panels.map((panel, i) => ({
+    ...panel,
+    photoIndex: state.currentPhotoIndex,
+    zoom: 1,
+    offsetX: 0,
+    offsetY: 0,
+    selected: i === 0,
+  }));
+}
+
+export function selectPanel(index) {
+  state.panels.forEach((p, i) => (p.selected = i === index));
 }
 
 export function getCurrentPhoto() {
-  return state.currentPhotoKey ? state.photos.get(state.currentPhotoKey) : null;
+  if (state.currentPhotoIndex < 0 || state.currentPhotoIndex >= state.photos.length) return null;
+  return state.photos[state.currentPhotoIndex];
+}
+
+export function getSelectedPanel() {
+  return state.panels.find((p) => p.selected) || state.panels[0];
 }
 
 export function setLayout(index) {
-  state.layoutIndex = Math.max(0, Math.min(index, state.layouts.length - 1));
-  rebuildPanels();
+  state.layoutIndex = index;
+  const photo = getCurrentPhoto();
+  if (photo) initPanelsForPhoto(photo);
 }
 
 export function setGrade(index) {
-  state.gradeIndex = Math.max(0, Math.min(index, state.grades.length - 1));
+  state.gradeIndex = index;
 }
 
-export function setFont(family) {
-  state.fontFamily = family;
+export function setFontFamily(name) {
+  state.fontFamily = name;
 }
 
-export function setCaption(text) {
-  state.caption = text;
-}
-
-export function setSubtitle(text) {
-  state.subtitle = text;
-}
-
-export function setCanvasSize(w, h) {
-  state.canvasWidth = w;
-  state.canvasHeight = h;
-}
-
-export function rebuildPanels() {
-  const layout = state.layouts[state.layoutIndex];
-  if (!layout) return;
-  
+export function randomize() {
+  state.layoutIndex = Math.floor(Math.random() * layouts.length);
+  state.gradeIndex = Math.floor(Math.random() * grades.length);
   const photo = getCurrentPhoto();
-  if (!photo) return;
-  
-  state.panels = layout.panels.map((panelRect, i) => ({
-    ...panelRect,
-    photoKey: state.currentPhotoKey,
-    crop: { x: 0.5, y: 0.5, scale: 1 },
-  }));
-  
-  state.panelZooms = state.panels.map(() => 1);
-  state.activePanelIndex = 0;
+  if (photo) initPanelsForPhoto(photo);
 }
 
-export function updatePanelCrop(panelIndex, dx, dy) {
-  const panel = state.panels[panelIndex];
-  if (!panel) return;
-  
-  const zoom = state.panelZooms[panelIndex] || 1;
-  const sensitivity = 0.002 / zoom;
-  
-  panel.crop.x = Math.max(0, Math.min(1, panel.crop.x + dx * sensitivity));
-  panel.crop.y = Math.max(0, Math.min(1, panel.crop.y + dy * sensitivity));
-}
-
-export function updatePanelZoom(panelIndex, delta) {
-  const zoom = Math.max(1, Math.min(3, (state.panelZooms[panelIndex] || 1) + delta));
-  state.panelZooms[panelIndex] = zoom;
-  
-  const panel = state.panels[panelIndex];
-  if (panel) {
-    panel.crop.scale = zoom;
-  }
-}
-
-export function setActivePanel(index) {
-  state.activePanelIndex = Math.max(0, Math.min(index, state.panels.length - 1));
-}
-
-// Get current photo key (useful for URL sharing)
-export function getCurrentPhotoKey() {
-  return state.currentPhotoKey;
+export function clearAll() {
+  state.photos.forEach((p) => URL.revokeObjectURL(p.img.src));
+  state.photos = [];
+  state.currentPhotoIndex = -1;
+  state.panels = [];
+  state.caption = '';
+  state.subtitle = '';
 }

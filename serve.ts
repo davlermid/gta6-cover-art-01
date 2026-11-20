@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(fileURLToPath(new URL('./app', import.meta.url)));
 const args = process.argv.slice(2);
-const portArg = args.indexOf('--port');
-const requested = portArg === -1 ? 8080 : Number(args[portArg + 1]);
-const port = Number.isInteger(requested) && requested > 0 && requested < 65536 ? requested : 8080;
+const portArg = args.findIndex((a) => a === '--port');
+const port = portArg >= 0 && portArg + 1 < args.length ? Number(args[portArg + 1]) : 8080;
+const listenPort = Number.isInteger(port) && port > 0 && port < 65536 ? port : 8080;
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -64,6 +64,6 @@ createServer((req, res) => {
     'cache-control': 'no-store',
   });
   createReadStream(file).pipe(res);
-}).listen(port, '127.0.0.1', () => {
-  console.log(`Neon Shore Cover Studio running at http://localhost:${port}`);
+}).listen(listenPort, '127.0.0.1', () => {
+  console.log(`Neon Shore Cover Studio on http://localhost:${listenPort}`);
 });

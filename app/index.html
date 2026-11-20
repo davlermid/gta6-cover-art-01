@@ -4,96 +4,73 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Neon Shore Cover Studio</title>
-  <meta name="description" content="Create GTA-style cover art with neon color grades, custom layouts, and Archivo Black lettering">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌴</text></svg>">
   <link rel="stylesheet" href="style.css">
-  <link rel="preload" href="fonts/ArchivoBlack-Regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="fonts/Anton-Regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="fonts/BebasNeue-Regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="fonts/Pacifico-Regular.ttf" as="font" type="font/ttf" crossorigin>
 </head>
 <body>
-  <header class="toolbar">
+  <header>
     <h1>Neon Shore Cover Studio</h1>
-    <div class="toolbar-actions">
-      <button id="btn-random" title="Randomize everything">Randomize</button>
-    </div>
+    <p class="tagline">GTA 6-style cover art maker</p>
   </header>
 
-  <main class="workspace">
-    <section class="editor-pane">
-      <div class="canvas-wrap">
-        <canvas id="canvas" width="1080" height="1080"></canvas>
-        <div class="canvas-overlay" id="canvas-overlay"></div>
-      </div>
-      <div class="controls">
-        <div class="control-group">
-          <label>Photo</label>
-          <div class="photo-picker">
-            <input type="file" id="photo-input" accept="image/*" title="Load your own photo">
-            <select id="sample-picker">
-              <option value="">— Built-in samples —</option>
-              <option value="samples/boulevard.jpg">Boulevard</option>
-              <option value="samples/pier.jpg">Pier</option>
-            </select>
-          </div>
+  <main class="app-container">
+    <aside class="controls">
+      <section class="control-group">
+        <h2>Photo</h2>
+        <input type="file" id="photo-input" accept="image/*" title="Choose a photo">
+        <div class="samples">
+          <button type="button" class="sample-btn" data-sample="samples/boulevard.jpg" data-name="Boulevard">Boulevard</button>
+          <button type="button" class="sample-btn" data-sample="samples/pier.jpg" data-name="Pier">Pier</button>
         </div>
+      </section>
 
-        <div class="control-group">
-          <label>Layout</label>
-          <select id="layout-picker"></select>
-        </div>
+      <section class="control-group">
+        <h2>Caption</h2>
+        <input type="text" id="caption-input" placeholder="Main title (e.g., SUNSET HEIST)" maxlength="32">
+        <input type="text" id="subtitle-input" placeholder="Subtitle (optional)" maxlength="48">
+      </section>
 
-        <div class="control-group">
-          <label>Color Grade</label>
-          <select id="grade-picker"></select>
-        </div>
+      <section class="control-group">
+        <h2>Layout</h2>
+        <select id="layout-select"></select>
+        <div id="panel-selector" class="panel-selector"></div>
+        <p class="hint">Click a panel to select, then drag on canvas to pan</p>
+      </section>
 
-        <div class="control-group">
-          <label>Caption</label>
-          <input type="text" id="caption-input" placeholder="Main title" value="Vice City Nights">
-        </div>
+      <section class="control-group">
+        <h2>Color Grade</h2>
+        <select id="grade-select"></select>
+      </section>
 
-        <div class="control-group">
-          <label>Subtitle</label>
-          <input type="text" id="subtitle-input" placeholder="Neon glow subtitle" value="Neon Shore">
-        </div>
+      <section class="control-group">
+        <h2>Font</h2>
+        <select id="font-select"></select>
+      </section>
 
-        <div class="control-group">
-          <label>Font</label>
-          <select id="font-picker"></select>
-        </div>
+      <section class="control-group">
+        <h2>Zoom & Pan</h2>
+        <p class="hint">Drag on preview to pan, wheel to zoom</p>
+        <input type="range" id="zoom-slider" min="1" max="5" step="0.01" value="1">
+      </section>
 
-        <div class="control-group">
-          <label>Zoom</label>
-          <input type="range" id="zoom-slider" min="1" max="3" step="0.05" value="1">
-          <span id="zoom-value">1.00×</span>
-        </div>
+      <section class="control-group exports">
+        <h2>Export PNG</h2>
+        <button type="button" class="export-btn" data-width="1080" data-height="1080" data-label="Square 1080×1080">Square 1080×1080</button>
+        <button type="button" class="export-btn" data-width="1080" data-height="1350" data-label="Portrait 1080×1350">Portrait 1080×1350</button>
+        <button type="button" class="export-btn" data-width="1920" data-height="1080" data-label="Landscape 1920×1080">Landscape 1920×1080</button>
+      </section>
 
-        <div class="control-group">
-          <label>Pan</label>
-          <div class="pan-indicator" id="pan-indicator">Drag on canvas to pan</div>
-        </div>
-
-        <div class="export-group">
-          <button id="export-1080" data-w="1080" data-h="1080">Export 1080×1080</button>
-          <button id="export-1350" data-w="1080" data-h="1350">Export 1080×1350</button>
-          <button id="export-1920" data-w="1920" data-h="1080">Export 1920×1080</button>
-        </div>
-      </div>
-    </section>
-
-    <aside class="preview-pane" id="preview-pane">
-      <h2>Preview</h2>
-      <div class="preview-wrap">
-        <canvas id="preview-canvas" width="360" height="360"></canvas>
-      </div>
-      <p class="preview-hint">Preview updates live as you edit</p>
+      <section class="control-group">
+        <button type="button" id="randomize-btn" class="randomize-btn">Randomize Layout & Grade</button>
+      </section>
     </aside>
+
+    <section class="preview-area">
+      <canvas id="preview-canvas" width="600" height="600"></canvas>
+    </section>
   </main>
 
-  <footer class="statusbar">
-    <span id="status-text">Ready — load a photo to begin</span>
+  <footer>
+    <p>Built for make.fun gta6-cover-art-01 — Fonts: Archivo Black, Anton, Bebas Neue, Pacifico (OFL)</p>
   </footer>
 
   <script type="module" src="src/main.js"></script>
